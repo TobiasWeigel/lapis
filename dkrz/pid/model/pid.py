@@ -3,7 +3,10 @@ Created on 20.04.2012
 
 @author: tobiasweigel
 """
-from dkrz.pid.infra.infrastructure import PIDAlreadyExistsError
+
+PID_TYPE_BASE = 0
+PID_TYPE_ALIAS = 1
+PID_TYPE_SET = 10
 
 class PID(object):
     """
@@ -23,11 +26,15 @@ class PID(object):
         @param identifier: The already acquired identifier to associate the object with. 
 
         """
-        self.annotations = {}
-        self.resource = None
-        self.id = identifier
-        self.pid_infra = pid_infrastructure
-        self.resource_location = None
+        self._annotations = {}
+        self._id = identifier
+        self._pid_infra = pid_infrastructure
+        self._resource_location = None
+        self._pid_type = PID_TYPE_BASE
+
+    def __hash__(self, *args, **kwargs):
+        return self._id
+      
 
     def set_annotations(self, annotations):
         """
@@ -35,8 +42,8 @@ class PID(object):
         
         @param annotations: New annotations to replace the old ones (if any). Must be a dictionary.  
         """
-        self.annotations = annotations.copy()
-        self.pid_infra.write_annotations(self.id, annotations)
+        self._annotations = annotations.copy()
+        self._pid_infra._write_annotations(self._id, annotations)
         
     def set_annotation(self, key, value):
         """
@@ -46,25 +53,57 @@ class PID(object):
         @param value: An arbitrarily typed value.
         """
         key_s = str(key)
-        self.annotations[key_s] = value
-        self.pid_infra.write_annotation(self.id, key_s, value)
+        self._annotations[key_s] = value
+        self._pid_infra._write_annotation(self._id, key_s, value)
+        
+    def get_annotation(self, key):
+        """
+        Returns the annotation value for the given key.
+        
+        @param key: A string key.
+        @return: The value associated with the key or None if key did not exist
+        """
+        key_s = str(key)
+        return self._annotations.get(key_s)
+        
+    def iter_annotations(self):
+        """
+        Returns an iterator over all annotations
+        """
+        return iter(self._annotations)
         
     def clear_annotations(self):
         """
         Clears all annotations. This does not affect the resource location and similar informations.
         """
-        self.annotations = {}
-        self.pid_infra.write_annotations(self.id, {})
-        
-    def set_resource_location(self, location):
+        self._annotations = {}
+        self._pid_infra._write_annotations(self._id, {})
+
+    def _set_resource_location(self, location):
         """
         Sets the resource location of this PID.
         @param location: A string which provides domain-relevant information about the location of the referenced
             resource.
         """
-        self.resource_location = location
-        self.pid_infra.write_resource_location(self.id, self.resource_location)  
+        self._resource_location = location
+        self._pid_infra._write_resource_location(self._id, self._resource_location)
         
+    def _get_resource_location(self):
+        return self._resource_location
+
+    resource_location = property(_get_resource_location, _set_resource_location, doc="The location of the resource this PID refers to.")
+        
+    def __get_pid_type(self):
+        return self._pid_type    
+
+    pid_type = property(__get_pid_type, doc="The PID type of this instance (read-only). Not to be confused with the resource type.")
+
+    def __get_id(self):
+        return self._id
+    
+    identifier = property(__get_id, doc="The full identifier of this PID (read-only).")
+    
+
 class TypedPID(PID):
     """
         Typed Persistent Identifier.
@@ -93,4 +132,5 @@ class TypedPID(PID):
         """
         self.set_resource_location(location)
         self.set_resource_type(res_type)
+        
         
