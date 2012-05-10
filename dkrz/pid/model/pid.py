@@ -8,30 +8,37 @@ PID_TYPE_BASE = 0
 PID_TYPE_ALIAS = 1
 PID_TYPE_SET = 10
 
+VALUETYPE_DATA = 0
+
 class PID(object):
     """
     Persistent Identifier representation in native Python.
     Changes to the object cause changes in the underlying PID infrastructure.
     
     A PID consists of a globally unique, resolvable identifier, provided by the PID infrastructure, a resource location
-    for digital materual and associated metadata, called annotations. Annotations have the form of key-value pairs. 
-    Keys are strings, the value is not specifically typed (octet-stream).
+    for digital material and associated metadata, called annotations. Annotations have the form of key-value pairs. 
+    Keys are strings, the value is not specifically typed (octet-stream). Keys are unique. If more than one value should
+    be assigned to one key, use a list as the key value.
     """
 
-    def __init__(self, pid_infrastructure, identifier):
+    def __init__(self, pid_infrastructure, identifier, annotations = {}, resource_location = None, pid_type = PID_TYPE_BASE):
         """
         Constructor. Only called by the factory.
 
         @param pid_infrastructure: The PID infrastructure interface to use.
-        @param identifier: The already acquired identifier to associate the object with. 
+        @param identifier: The already acquired identifier to associate the object with.
+        @param annotations: The annotations to initialize this PID with. Note that the given dict is not copied, but
+          assigned directly.
+        @param resource_location: The resource location to set this PID to.
+        @param pid_type: the PID type.         
 
         """
-        self._annotations = {}
+        self._annotations = annotations
         self._id = identifier
         self._pid_infra = pid_infrastructure
-        self._resource_location = None
-        self._pid_type = PID_TYPE_BASE
-
+        self._resource_location = resource_location
+        self._pid_type = pid_type
+        
     def __hash__(self, *args, **kwargs):
         return self._id
       
@@ -45,11 +52,12 @@ class PID(object):
         self._annotations = annotations.copy()
         self._pid_infra._write_annotations(self._id, annotations)
         
-    def set_annotation(self, key, value):
+    def set_annotation(self, key, value, valuetype=VALUETYPE_DATA):
         """
         Sets the annotation with given key to a new value.
         
-        @param key: A string key.
+        @param key: A string key. A key may also be seen as a type, but note that this is not a data type in the strict 
+          sense, but rather a semantic specification (i.e. 'e-mail' or 'url', where the data type is both String).
         @param value: An arbitrarily typed value.
         """
         key_s = str(key)
