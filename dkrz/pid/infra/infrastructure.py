@@ -7,6 +7,8 @@ from random import Random
 import string
 from dkrz.pid.model.pid import PID
 
+RESOURCE_LOCATION_TYPE_URL = "URL"
+
 class PIDInfrastructure(object):
     """
     A PID Infrastructure (factory for PID instances).
@@ -83,7 +85,7 @@ class PIDInfrastructure(object):
         """
         raise NotImplementedError()
     
-    def _write_annotations(self, identifier, annotations):
+    def _write_all_annotations(self, identifier, annotations):
         """
         Writes the annotations for the given identifier. All existing annotations, even for keys not in the given
         annotations dict, are cleared prior to rewrite, i.e. the method performs a full replacement operation. Thus,
@@ -103,10 +105,13 @@ class PIDInfrastructure(object):
         """
         raise NotImplementedError()
     
-    def _write_resource_location(self, identifier, resource_location):
+    def _write_resource_location(self, identifier, resource_location, resource_location_type=RESOURCE_LOCATION_TYPE_URL):
         """
         Sets the resource location for the given identifier.
         @param resource_location: the resource location (string).
+        @param resource_location_type: how is the location reference? Typically, this will be through a URL (default), 
+          but a caller may also specify any other type String. Note that the particular underlying infrastructure may
+          assign meaning to specific types. 
         """
         raise NotImplementedError()
     

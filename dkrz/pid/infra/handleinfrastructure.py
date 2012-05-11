@@ -3,13 +3,20 @@ Created on 03.05.2012
 
 @author: tobiasweigel
 '''
-from dkrz.pid.infra.infrastructure import PIDInfrastructure
+from dkrz.pid.infra.infrastructure import PIDInfrastructure, RESOURCE_LOCATION_TYPE_URL
 from httplib import HTTPConnection
 import json
 from dkrz.pid.model.pid import PID, PID_TYPE_BASE
 
 INDEX_RESOURCE_LOCATION = 1
 INDEX_PID_TYPE = 2
+
+"""
+At which Handle value index do we begin with annotation information?
+"""
+FREE_INDEX_START = 1000
+
+TYPE_PID_TYPE = "10876/__TYPES/PID_TYPE"
 
 
 class IllegalHandleStructureError(Exception):
@@ -22,8 +29,7 @@ class HandleInfrastructure(PIDInfrastructure):
     Connects to the Handle System via a RESTful interface.
     """ 
     
-    _PID_TYPE_HANDLES = {PID_TYPE_BASE: "10876/__PID_TYPE/BASE"}
-
+    
     def __init__(self, host, port, path):
         '''
         Constructor
@@ -35,15 +41,6 @@ class HandleInfrastructure(PIDInfrastructure):
         if not self.path.endswith("/"):
             self.path = self.path + "/"
             
-    @classmethod
-    def determine_pid_type_handle(cls, pid_type):
-        """
-        Determines the Handle for the given PID type constant (which should be an int).
-        @param pid_type: The pid_type constant value to convert. Constants are given in :module:pid.py.
-        @return a valid Handle identifier representing the given type 
-        """
-        return cls._PID_TYPE_HANDLES[pid_type]
-        
     def _acquire_pid(self, identifier):
         http = HTTPConnection(self.host, self.port)
         http.request("POST", self.path+identifier, None)
@@ -97,7 +94,7 @@ class HandleInfrastructure(PIDInfrastructure):
             raise IOError("Unknown Handle: %s" % identifier)
         piddata = json.load(resp)
         matching_values = []
-        free_index = 101
+        free_index = FREE_INDEX_START
         for ele in piddata:
             if ele["type"] == key:
                 matching_values.append(ele)
@@ -117,3 +114,40 @@ class HandleInfrastructure(PIDInfrastructure):
         if not(200 <= resp.status <= 299):
             raise IOError("Could not write annotations to Handle %s: %s" % (identifier, resp.reason))
         
+    def _write_all_annotations(self, identifier, annotations):
+        http = HTTPConnection(self.host, self.port)
+        # must retrieve current Handle data to maintain the resource location and pid type
+        http.request("GET", self.path+self.identifier)
+        resp = http.getresponse()
+        if not(200 <= resp.status <= 299):
+            raise IOError("Unknown Handle: %s" % identifier)
+        piddata = json.load(resp)
+        pid_type = PID_TYPE_BASE
+        resource_location = ""
+        for ele in piddata:
+            if ele["index"] == INDEX_PID_TYPE:
+                pid_type = ele["data"]
+            elif ele["index"] == INDEX_RESOURCE_LOCATION:
+                resource_location = ele["data"]
+        # convert annotations to Handle values
+        handle_values = [{"index": INDEX_PID_TYPE, "type": TYPE_PID_TYPE, "data": pid_type},
+                           {"index": INDEX_RESOURCE_LOCATION, "type": "", "data": resource_location}]
+        current_index = FREE_INDEX_START
+        for k, v in annotations.iter_items():
+            handle_values.append({"index": current_index, "type": k, "data": v})
+            current_index += 1
+        # now store new Handle values, replacing ALL old ones
+        data = json.dumps(handle_values)
+        http.request("POST", self.path+self.identifier, data)
+        resp = http.getresponse()
+        if not(200 <= resp.status <= 299):
+            raise IOError("Could not write annotations to Handle %s: %s" % (identifier, resp.reason))
+
+    def _write_resource_location(self, identifier, resource_location, resource_location_type=RESOURCE_LOCATION_TYPE_URL):
+        http = HTTPConnection(self.host, self.port)
+        handle_values = [{"index": INDEX_RESOURCE_LOCATION, "type": resource_location_type, "data": resource_location}]
+        data = json.dumps(handle_values)
+        http.request("PUT", self.path+self.identifier, data)
+        resp = http.getresponse()
+        if not(200 <= resp.status <= 299):
+            raise IOError("Could not write resource location to Handle %s: %s" % (identifier, resp.reason))

@@ -50,7 +50,7 @@ class PID(object):
         @param annotations: New annotations to replace the old ones (if any). Must be a dictionary.  
         """
         self._annotations = annotations.copy()
-        self._pid_infra._write_annotations(self._id, annotations)
+        self._pid_infra._write_all_annotations(self._id, annotations)
         
     def set_annotation(self, key, value, valuetype=VALUETYPE_DATA):
         """
@@ -85,7 +85,7 @@ class PID(object):
         Clears all annotations. This does not affect the resource location and similar informations.
         """
         self._annotations = {}
-        self._pid_infra._write_annotations(self._id, {})
+        self._pid_infra._write_all_annotations(self._id, {})
 
     def _set_resource_location(self, location):
         """
