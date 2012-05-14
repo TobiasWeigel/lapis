@@ -170,3 +170,11 @@ class HandleInfrastructure(PIDInfrastructure):
         resp = http.getresponse()
         if not(200 <= resp.status <= 299):
             raise IOError("Could not write resource location to Handle %s: %s" % (identifier, resp.reason))
+
+    def delete_pid(self, identifier):
+        http = HTTPConnection(self.host, self.port)
+        path, identifier = self._prepare_identifier(identifier)
+        http.request("DELETE", path)
+        resp = http.getresponse()
+        if not(200 <= resp.status <= 299):
+            raise IOError("Could not delete Handle %s: %s" % (identifier, resp.reason))
