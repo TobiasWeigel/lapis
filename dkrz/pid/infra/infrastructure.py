@@ -121,18 +121,6 @@ class PIDInfrastructure(object):
         """
         raise NotImplementedError()
     
-    def delete_all_pids(self, suffix_prefix):
-        """
-        Deletes all identifiers whose suffix starts with the given prefix.
-        This method can be used to erase the whole repository (you have been warned!).
-        
-        @param suffix_prefix: A string which can be used to constrain the operation to a specific group of PIDs. The
-          suffix_prefix will be used to match all identifiers whose suffix starts with the given suffix_prefix. I.e., if
-          the suffix_prefix is "test-" and the current prefix is 10876, all identifiers will be erase that begin with
-          "10876/test-". If this string is set to be empty, ALL IDENTIFIERS WILL BE ERASED!   
-        """
-        raise NotImplementedError()
-    
     
 class InMemoryInfrastructure(PIDInfrastructure):
     """
