@@ -50,6 +50,8 @@ class HandleInfrastructure(PIDInfrastructure):
         if (self.additional_identifier_element):
             # split identifier into prefix and suffix, insert additional element inbetween 
             parts = identifier.split("/", 1)
+            if (parts[1].startswith(self.additional_identifier_element)):
+                return self.path, identifier
             return self.path, parts[0]+"/"+self.additional_identifier_element+parts[1]
         else:
             return self.path, identifier
