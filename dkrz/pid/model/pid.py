@@ -52,7 +52,7 @@ class PID(object):
         self._annotations = annotations.copy()
         self._pid_infra._write_all_annotations(self._id, annotations)
         
-    def set_annotation(self, key, value, valuetype=VALUETYPE_DATA):
+    def set_annotation(self, key, value):
         """
         Sets the annotation with given key to a new value.
         
