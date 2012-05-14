@@ -30,9 +30,12 @@ class HandleInfrastructure(PIDInfrastructure):
     """ 
     
     
-    def __init__(self, host, port, path):
+    def __init__(self, host, port, path, additional_identifier_element = None):
         '''
-        Constructor
+        Constructor.
+        
+        @param additional_identifier_element: A string that is inserted inbetween Handle prefix and suffix, e.g. if set
+          to "test-", 10876/identifier becomes 10876/test-identifier.
         '''
         super(HandleInfrastructure, self).__init__()
         self.host = host
@@ -40,10 +43,22 @@ class HandleInfrastructure(PIDInfrastructure):
         self.path = path
         if not self.path.endswith("/"):
             self.path = self.path + "/"
+        self.additional_identifier_element = additional_identifier_element
             
+
+    def _prepare_identifier(self, identifier):
+        if (self.additional_identifier_element):
+            # split identifier into prefix and suffix, insert additional element inbetween 
+            parts = identifier.split("/", 1)
+            return self.path, parts[0]+"/"+self.additional_identifier_element+parts[1]
+        else:
+            return self.path, identifier
+    
+    
     def _acquire_pid(self, identifier):
         http = HTTPConnection(self.host, self.port)
-        http.request("POST", self.path+identifier, None)
+        path, identifier = self._prepare_identifier(identifier)
+        http.request("POST", path, None)
         resp = http.getresponse()
         if not(200 <= resp.status <= 299):
             raise IOError("Could not create Handle %s: %s" % (identifier, resp.reason))
@@ -74,7 +89,8 @@ class HandleInfrastructure(PIDInfrastructure):
         
     def lookup_pid(self, identifier):
         http = HTTPConnection(self.host, self.port)
-        http.request("GET", self.path+self.identifier, None)
+        path, identifier = self._prepare_identifier(identifier)
+        http.request("GET", path, None)
         resp = http.getresponse()
         if resp.status == 404:
             # Handle not found
@@ -87,8 +103,9 @@ class HandleInfrastructure(PIDInfrastructure):
         
     def _write_annotation(self, identifier, key, value):
         http = HTTPConnection(self.host, self.port)
+        path, identifier = self._prepare_identifier(identifier)
         # first, we need to determine the index to use by looking at the key
-        http.request("GET", self.path+self.identifier)
+        http.request("GET", path)
         resp = http.getresponse()
         if not(200 <= resp.status <= 299):
             raise IOError("Unknown Handle: %s" % identifier)
@@ -109,15 +126,16 @@ class HandleInfrastructure(PIDInfrastructure):
             index = free_index
         # now we can write the annotation
         data = json.dumps([{"index": index, "type": key, "data": value}])
-        http.request("PUT", self.path+self.identifier, data)
+        http.request("PUT", path, data)
         resp = http.getresponse()
         if not(200 <= resp.status <= 299):
             raise IOError("Could not write annotations to Handle %s: %s" % (identifier, resp.reason))
         
     def _write_all_annotations(self, identifier, annotations):
         http = HTTPConnection(self.host, self.port)
+        path, identifier = self._prepare_identifier(identifier)
         # must retrieve current Handle data to maintain the resource location and pid type
-        http.request("GET", self.path+self.identifier)
+        http.request("GET", path)
         resp = http.getresponse()
         if not(200 <= resp.status <= 299):
             raise IOError("Unknown Handle: %s" % identifier)
@@ -138,16 +156,17 @@ class HandleInfrastructure(PIDInfrastructure):
             current_index += 1
         # now store new Handle values, replacing ALL old ones
         data = json.dumps(handle_values)
-        http.request("POST", self.path+self.identifier, data)
+        http.request("POST", path, data)
         resp = http.getresponse()
         if not(200 <= resp.status <= 299):
             raise IOError("Could not write annotations to Handle %s: %s" % (identifier, resp.reason))
 
     def _write_resource_location(self, identifier, resource_location, resource_location_type=RESOURCE_LOCATION_TYPE_URL):
         http = HTTPConnection(self.host, self.port)
+        path, identifier = self._prepare_identifier(identifier)
         handle_values = [{"index": INDEX_RESOURCE_LOCATION, "type": resource_location_type, "data": resource_location}]
         data = json.dumps(handle_values)
-        http.request("PUT", self.path+self.identifier, data)
+        http.request("PUT", path, data)
         resp = http.getresponse()
         if not(200 <= resp.status <= 299):
             raise IOError("Could not write resource location to Handle %s: %s" % (identifier, resp.reason))
