@@ -23,12 +23,14 @@ class PID(object):
 
     def __init__(self, pid_infrastructure, identifier, annotations = {}, resource_location = None, pid_type = PID_TYPE_BASE):
         """
-        Constructor. Only called by the factory.
+        Constructor. Only called by the factory or other infrastructure methods that construct/reconstruct PID 
+        instances.
 
         @param pid_infrastructure: The PID infrastructure interface to use.
         @param identifier: The already acquired identifier to associate the object with.
         @param annotations: The annotations to initialize this PID with. Note that the given dict is not copied, but
-          assigned directly.
+          assigned directly. Also note that independent of the particular infrastructure, no resource location or
+          pid-type entries should be given in the annotations dict.
         @param resource_location: The resource location to set this PID to.
         @param pid_type: the PID type.         
 
@@ -80,7 +82,7 @@ class PID(object):
         """
         Returns an iterator over all annotations
         """
-        return iter(self._annotations)
+        return self._annotations.iteritems()
         
     def clear_annotations(self):
         """
