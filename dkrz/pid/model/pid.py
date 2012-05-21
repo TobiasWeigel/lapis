@@ -33,6 +33,8 @@ class PID(object):
         @param pid_type: the PID type.         
 
         """
+        if not isinstance(annotations, dict):
+            raise TypeError("Invalid type for annotations of a PID: %s; contents: %s" % (type(annotations), repr(annotations)))
         self._annotations = annotations
         self._id = identifier
         self._pid_infra = pid_infrastructure
