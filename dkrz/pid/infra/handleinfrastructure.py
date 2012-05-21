@@ -3,7 +3,7 @@ Created on 03.05.2012
 
 @author: tobiasweigel
 '''
-from dkrz.pid.infra.infrastructure import PIDInfrastructure, RESOURCE_LOCATION_TYPE_URL
+from dkrz.pid.infra.infrastructure import PIDInfrastructure, RESOURCE_LOCATION_TYPE_URL, PIDAlreadyExistsError
 from httplib import HTTPConnection
 import json
 from dkrz.pid.model.pid import PID, PID_TYPE_BASE
@@ -79,7 +79,7 @@ class HandleInfrastructure(PIDInfrastructure):
         resp = http.getresponse()
         if (resp.status == 200):
             # Handle already exists
-            raise IOError("Handle already exists: %s" % identifier)
+            raise PIDAlreadyExistsError("Handle already exists: %s" % identifier)
         if (resp.status != 404):
             raise IOError("Failed to check for existing Handle %s (HTTP Code %s): %s" % (identifier, resp.status, resp.reason))
         # Handle does not exist, so we can safely create it
@@ -89,18 +89,22 @@ class HandleInfrastructure(PIDInfrastructure):
         if not(200 <= resp.status <= 299):
             raise IOError("Could not create Handle %s: %s" % (identifier, resp.reason))
         return identifier
-        
+    
     def _pid_from_json(self, piddata, identifier):
         # piddata is an array of dicts, where each dict has keys: index, type, data
         annotations = {}
         res_loc = None
-        pid_type = self.determine_pid_type_handle(PID_TYPE_BASE)
+        pid_type = PID_TYPE_BASE
         for ele in piddata:
-            if ele["index"] == INDEX_RESOURCE_LOCATION:
+            idx = int(ele["index"])
+            if idx == INDEX_RESOURCE_LOCATION:
                 res_loc = ele["data"]
                 continue
-            if ele["index"] == INDEX_PID_TYPE:
+            if idx == INDEX_PID_TYPE:
                 pid_type = ele["data"]
+                continue
+            if ele["type"] == "HS_ADMIN":
+                # ignore HS_ADMIN values; these are taken care of by the REST service server-side
                 continue
             if ele["type"] in annotations:
                 # multiple data for one key.. allowed in Handles, but not in our PIDs. --> Construct a list.
@@ -141,7 +145,7 @@ class HandleInfrastructure(PIDInfrastructure):
         for ele in piddata:
             if ele["type"] == key:
                 matching_values.append(ele)
-            if ele["index"] >= free_index:
+            if int(ele["index"]) >= free_index:
                 free_index = int(ele["index"])+1
         if len(matching_values) > 1:
             raise IllegalHandleStructureError("Handle %s contains more than one entry of type %s!" % (identifier, key))
