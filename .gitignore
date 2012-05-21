@@ -1,3 +1,4 @@
 /.virtualenv
 /.project
 /.pydevproject
+*.pyc
