@@ -190,13 +190,19 @@ class InMemoryInfrastructure(PIDInfrastructure):
         ele = self._storage.get(identifier)
         if not ele:
             raise KeyError
-        ele._annotations = annotations
+        ele._annotations.update(annotations)
         
     def _write_resource_location(self, identifier, resource_location):
         ele = self._storage.get(identifier)
         if not ele:
             raise KeyError
         ele._resource_location = resource_location
+
+    def _write_all_annotations(self, identifier, annotations):
+        ele = self._storage.get(identifier)
+        if not ele:
+            raise KeyError
+        ele.a_annotations = annotations
         
     
 class PIDAlreadyExistsError(Exception):
