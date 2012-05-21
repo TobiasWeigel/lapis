@@ -18,6 +18,7 @@ FREE_INDEX_START = 1000
 
 TYPE_PID_TYPE = "10876/__TYPES/PID_TYPE"
 
+DEFAULT_JSON_HEADERS = {"Content-Type": "application/json"}
 
 class IllegalHandleStructureError(Exception):
     pass
@@ -30,10 +31,13 @@ class HandleInfrastructure(PIDInfrastructure):
     """ 
     
     
-    def __init__(self, host, port, path, additional_identifier_element = None):
+    def __init__(self, host, port, path, prefix = None, additional_identifier_element = None):
         '''
         Constructor.
         
+        @param prefix: The Handle prefix to use (without trailing slash). If not given, all operations will work
+          nonetheless, except for random handle creation. Note that setting a prefix does not mean that identifier 
+          strings can omit it - all identifiers must ALWAYS include the prefix, no matter what.
         @param additional_identifier_element: A string that is inserted inbetween Handle prefix and suffix, e.g. if set
           to "test-", 10876/identifier becomes 10876/test-identifier.
         '''
@@ -41,26 +45,46 @@ class HandleInfrastructure(PIDInfrastructure):
         self.host = host
         self.port = port
         self.path = path
+        self.prefix = prefix
         if not self.path.endswith("/"):
             self.path = self.path + "/"
         self.additional_identifier_element = additional_identifier_element
             
+    
+    def _generate_random_identifier(self):
+        if not self.prefix:
+            raise ValueError("Cannot generate random Handles if no prefix is provided!")
+        rid = super(HandleInfrastructure, self)._generate_random_identifier()
+        return self.prefix+"/"+rid
 
     def _prepare_identifier(self, identifier):
         if (self.additional_identifier_element):
             # split identifier into prefix and suffix, insert additional element inbetween 
             parts = identifier.split("/", 1)
+            if len(parts) != 2:
+                raise ValueError("Invalid identifier - no separating slash between prefix and suffix: %s" % identifier)
             if (parts[1].startswith(self.additional_identifier_element)):
-                return self.path, identifier
-            return self.path, parts[0]+"/"+self.additional_identifier_element+parts[1]
+                return self.path+identifier, identifier
+            newident = parts[0]+"/"+self.additional_identifier_element+parts[1]
+            return self.path+newident, newident
         else:
-            return self.path, identifier
+            return self.path+identifier, identifier
     
     
     def _acquire_pid(self, identifier):
         http = HTTPConnection(self.host, self.port)
         path, identifier = self._prepare_identifier(identifier)
-        http.request("POST", path, None)
+        # check for existing Handle
+        http.request("GET", path, None)
+        resp = http.getresponse()
+        if (resp.status == 200):
+            # Handle already exists
+            raise IOError("Handle already exists: %s" % identifier)
+        if (resp.status != 404):
+            raise IOError("Failed to check for existing Handle %s (HTTP Code %s): %s" % (identifier, resp.status, resp.reason))
+        # Handle does not exist, so we can safely create it
+        http = HTTPConnection(self.host, self.port)
+        http.request("PUT", path, "[]", DEFAULT_JSON_HEADERS)
         resp = http.getresponse()
         if not(200 <= resp.status <= 299):
             raise IOError("Could not create Handle %s: %s" % (identifier, resp.reason))
@@ -118,7 +142,7 @@ class HandleInfrastructure(PIDInfrastructure):
             if ele["type"] == key:
                 matching_values.append(ele)
             if ele["index"] >= free_index:
-                free_index = ele["index"]+1
+                free_index = int(ele["index"])+1
         if len(matching_values) > 1:
             raise IllegalHandleStructureError("Handle %s contains more than one entry of type %s!" % (identifier, key))
         elif len(matching_values) == 1:
@@ -127,8 +151,9 @@ class HandleInfrastructure(PIDInfrastructure):
             # key not present in Handle; must assign a new index
             index = free_index
         # now we can write the annotation
+        http = HTTPConnection(self.host, self.port)
         data = json.dumps([{"index": index, "type": key, "data": value}])
-        http.request("PUT", path, data)
+        http.request("POST", path, data, DEFAULT_JSON_HEADERS)
         resp = http.getresponse()
         if not(200 <= resp.status <= 299):
             raise IOError("Could not write annotations to Handle %s: %s" % (identifier, resp.reason))
@@ -157,8 +182,9 @@ class HandleInfrastructure(PIDInfrastructure):
             handle_values.append({"index": current_index, "type": k, "data": v})
             current_index += 1
         # now store new Handle values, replacing ALL old ones
+        http = HTTPConnection(self.host, self.port)
         data = json.dumps(handle_values)
-        http.request("POST", path, data)
+        http.request("PUT", path, data, DEFAULT_JSON_HEADERS)
         resp = http.getresponse()
         if not(200 <= resp.status <= 299):
             raise IOError("Could not write annotations to Handle %s: %s" % (identifier, resp.reason))
@@ -168,7 +194,7 @@ class HandleInfrastructure(PIDInfrastructure):
         path, identifier = self._prepare_identifier(identifier)
         handle_values = [{"index": INDEX_RESOURCE_LOCATION, "type": resource_location_type, "data": resource_location}]
         data = json.dumps(handle_values)
-        http.request("PUT", path, data)
+        http.request("POST", path, data, DEFAULT_JSON_HEADERS)
         resp = http.getresponse()
         if not(200 <= resp.status <= 299):
             raise IOError("Could not write resource location to Handle %s: %s" % (identifier, resp.reason))
