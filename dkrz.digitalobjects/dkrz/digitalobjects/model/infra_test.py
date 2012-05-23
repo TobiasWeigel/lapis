@@ -7,7 +7,6 @@ import unittest
 from dkrz.digitalobjects.infra.infrastructure import InMemoryInfrastructure, PIDAlreadyExistsError
 
 from random import Random
-import string
 
 import logging
 from dkrz.digitalobjects.infra.handleinfrastructure import HandleInfrastructure

@@ -1,0 +1,9 @@
+setup.cfg
+setup.py
+dkrz.digitalobjects.egg-info/PKG-INFO
+dkrz.digitalobjects.egg-info/SOURCES.txt
+dkrz.digitalobjects.egg-info/dependency_links.txt
+dkrz.digitalobjects.egg-info/entry_points.txt
+dkrz.digitalobjects.egg-info/not-zip-safe
+dkrz.digitalobjects.egg-info/top_level.txt
+dkrzdigitalobjects/__init__.py
