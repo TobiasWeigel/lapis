@@ -5,3 +5,5 @@
 /doc/html
 .settings
 /docs/build
+/*.egg
+/dkrz.digitalobjects.egg-info
