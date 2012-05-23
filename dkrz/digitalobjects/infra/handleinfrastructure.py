@@ -196,7 +196,9 @@ class HandleInfrastructure(DOInfrastructure):
     def _write_resource_location(self, identifier, resource_location, resource_type=None):
         http = HTTPConnection(self.host, self.port)
         path, identifier = self._prepare_identifier(identifier)
-        handle_values = [{"index": INDEX_RESOURCE_LOCATION, "type": resource_type, "data": resource_location}]
+        handle_values = [{"index": INDEX_RESOURCE_LOCATION, "type": "URL", "data": resource_location}]
+        if resource_type:
+            handle_values.append({"index": INDEX_RESOURCE_TYPE, "type": "", "data": resource_type})
         data = json.dumps(handle_values)
         http.request("POST", path, data, DEFAULT_JSON_HEADERS)
         resp = http.getresponse()
