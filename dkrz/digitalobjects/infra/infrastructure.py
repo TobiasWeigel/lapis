@@ -5,16 +5,14 @@ Created on 20.04.2012
 '''
 from random import Random
 import string
-from dkrz.pid.model.pid import PID
+from dkrz.digitalobjects.model.do import DigitalObject
 
-RESOURCE_LOCATION_TYPE_URL = "URL"
-
-class PIDInfrastructure(object):
+class DOInfrastructure(object):
     """
-    A PID Infrastructure (factory for PID instances).
+    A Digital Object Infrastructure (factory for Digital Object instances).
     
-    This is the main interface class for higher-level services that use PIDs. The infrastructure class must be
-    specialized to work on an underlying 'real-world' PID infrastructure (e.g. the Handle System).
+    This is the main interface class for higher-level services that use Digital Objects. The infrastructure class must 
+    be specialized to work on an underlying 'real-world' DO infrastructure (e.g. the Handle System).
     """
 
 
@@ -31,15 +29,16 @@ class PIDInfrastructure(object):
         """
         self._random.seed(seed)
         
-    def create_pid(self, identifier=None, pid_class=None):
+    def create_do(self, identifier=None, do_class=None):
         """
-        Factory method. Creates a new PID and returns the instance.
+        Factory method. Creates a new DO and returns the instance.
         
-        @param pid_class: The class of PID to manufacture. Defaults to None, which will generate this infrastructure's
-            default PID class.
+        @param do_class: The class of DO to manufacture. Defaults to None, which will generate this infrastructure's
+            default PID class. Not every infrastructure will support different classes of objects.
         @param identifier: The identifier string to use for the new instance. If None, the method will use a random 
             identifier.
-        @raise PIDAlreadyExistsError: If the given identifier already exists. No new PID will be created. 
+        @raise PIDAlreadyExistsError: If the given identifier already exists. No new PID will be allocated and no DO 
+          will be created. 
         """
         id = identifier
         if not id:
@@ -55,8 +54,8 @@ class PIDInfrastructure(object):
                     raise # escalate
         else:
             self._acquire_pid(id)
-        # we have an id, now we can create the PID object
-        pid = PID(self, id)
+        # we have an id, now we can create the DO object
+        pid = DigitalObject(self, id)
         return pid
     
     def _generate_random_identifier(self):
@@ -79,95 +78,98 @@ class PIDInfrastructure(object):
     
     def lookup_pid(self, identifier):
         """
-        Resolves the given identifier string to a PID object.
+        Resolves the given identifier string to a Digital Object.
         @param identifier: the full identifier string to resolve.
-        @return: a PID object or None if the identifier is still unassigned.
+        @return: a Digital Object or None if the identifier is still unassigned.
         """
         raise NotImplementedError()
     
     def _write_all_annotations(self, identifier, annotations):
         """
-        Writes the annotations for the given identifier. All existing annotations, even for keys not in the given
-        annotations dict, are cleared prior to rewrite, i.e. the method performs a full replacement operation. Thus,
-        you can also use this method to clear all annotations.
-        @param identifier: string identifier.
+        Writes the annotations for the object with the given identifier. All existing annotations, even for keys not 
+        in the given annotations dict, are cleared prior to rewrite, i.e. the method performs a full replacement 
+        operation. Thus, you can also use this method to clear all annotations.
+        @param identifier: string identifier, i.e. the Digital Object's PID.
         @param annotations: a dict with string keys and arbitrarily typed values.
         """
         raise NotImplementedError()
     
     def _write_annotation(self, identifier, key, value):
         """
-        Sets the annotation of the given identifier and key to the given value. Annotations of different keys remain
-        unchanged.
-        @param identifier: string identifier.
+        Sets the annotation of the object with given identifier and key to the given value. Annotations of other 
+        keys remain unchanged.
+        @param identifier: string identifier, i.e. the Digital Object's PID.
         @param key: string key.
         @param value: arbitrarily typed value.
         """
         raise NotImplementedError()
     
-    def _write_resource_location(self, identifier, resource_location, resource_location_type=RESOURCE_LOCATION_TYPE_URL):
+    def _write_resource_location(self, identifier, resource_location, resource_type=None):
         """
-        Sets the resource location for the given identifier.
+        Sets the resource location for the Digital Object with given identifier, i.e. sets the data of the Digital 
+        Object to an external resource.
         @param resource_location: the resource location (string).
-        @param resource_location_type: how is the location reference? Typically, this will be through a URL (default), 
-          but a caller may also specify any other type String. Note that the particular underlying infrastructure may
-          assign meaning to specific types. 
+        @param resource_type: the type of resource existing at the location. Defaults to None for unspecified resource
+          type. 
         """
         raise NotImplementedError()
     
-    def delete_pid(self, identifier):
+    def delete_do(self, identifier):
         """
-        Deletes the given identifier. Be careful, this operation cannot be undone!
+        Deletes the Digital Object with given identifier. Be careful, this operation cannot be undone!
         """
         raise NotImplementedError()
     
     
-class InMemoryInfrastructure(PIDInfrastructure):
+class InMemoryInfrastructure(DOInfrastructure):
     """
-    A PID infrastructure that only exists in memory and is thus not persistent per se. Use only for testing purposes,
+    A DO infrastructure that only exists in memory and is thus not persistent per se. Use only for testing purposes,
     since performance may be low - the way this class is implemented is targeted at testing and thus it does not
-    store real PID instances (as would be very suitable) but rather proxy objects that are 'written to'.
+    store real DO instances (as would be very suitable) but rather proxy objects that are 'written to'.
     """
     
     class InMemoryElement(object):
         """
-        Helper class that stores the data of a specific PID. Though it would be simpler to store PID instances directly,
+        Helper class that stores the data of a specific DO. Though it would be simpler to store DO instances directly,
         by way of rewriting the data to the instances of this helper class, the storage procedure is closer to real
-        PID infrastructures and thus better suited for testing.
+        DO infrastructures and thus better suited for testing.
         """
         
-        def __init__(self, pid):
+        def __init__(self, do):
             """
-            Takes the given PID instance and stores its content in special attributes. Will not store the PID instance 
+            Takes the given DO instance and stores its content in special attributes. Will not store the DO instance 
             itself!
             """
             self._annotations = {}
-            for k,v in pid.iter_annotations():
+            for k,v in do.iter_annotations():
                 self._annotations[k] = v 
-            self._resource_location = pid.resource_location
-            self._pid_type = pid.pid_type
+            self._resource_location = do.resource_location
+            self._resource_type = do.resource_type
             
-        def build_pid_instance(self, pid_infra, identifier):
+        def build_do_instance(self, do_infra, identifier):
             """
             Generates a PID instance from the information stored in this memory element object.
             """
-            pid = PID(pid_infra, identifier)
-            pid._resource_location = self._resource_location
-            pid._pid_type = self._pid_type
-            pid.set_annotations(self._annotations)
-            return pid
+            dobj = DigitalObject(do_infra, identifier)
+            dobj._resource_location = self._resource_location
+            dobj._resource_type = self._resource_type
+            dobj.set_annotations(self._annotations)
+            return dobj
     
     def __init__(self):
         super(InMemoryInfrastructure, self).__init__()
         # self._storage is a dict mapping identifier strings to real PID instances 
         self._storage = dict()
         
-    def create_pid(self, identifier=None, pid_class=None):
+    def create_do(self, identifier=None, do_class=None):
         # calling superclass method here will also cause _acquire_pid to be called
-        pid = PIDInfrastructure.create_pid(self, identifier, pid_class)
+        dobj = DOInfrastructure.create_do(self, identifier, do_class)
         # store new InMemoryElement in storage
-        self._storage[pid.identifier] = InMemoryInfrastructure.InMemoryElement(pid)
-        return pid
+        self._storage[dobj.identifier] = InMemoryInfrastructure.InMemoryElement(dobj)
+        return dobj
+    
+    def delete_do(self, identifier):
+        del self._storage[identifier]
         
     def _acquire_pid(self, identifier):
         if identifier in self._storage:
@@ -178,7 +180,7 @@ class InMemoryInfrastructure(PIDInfrastructure):
         ele = self._storage.get(identifier)
         if not ele:
             return None
-        return ele.build_pid_instance(self, identifier)
+        return ele.build_do_instance(self, identifier)
     
     def _write_annotation(self, identifier, key, value):
         ele = self._storage.get(identifier)
@@ -192,11 +194,12 @@ class InMemoryInfrastructure(PIDInfrastructure):
             raise KeyError
         ele._annotations.update(annotations)
         
-    def _write_resource_location(self, identifier, resource_location):
+    def _write_resource_location(self, identifier, resource_location, resource_type=None):
         ele = self._storage.get(identifier)
         if not ele:
             raise KeyError
         ele._resource_location = resource_location
+        ele._resource_type = resource_type
 
     def _write_all_annotations(self, identifier, annotations):
         ele = self._storage.get(identifier)
