@@ -7,3 +7,5 @@
 /docs/build
 /*.egg
 /dkrz.digitalobjects.egg-info
+/build/
+/dist/
