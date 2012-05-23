@@ -3,8 +3,13 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to dkrz-pid's documentation!
-====================================
+Welcome to the Digital Object Infrastructure documentation!
+===========================================================
+
+The Digital Object Infrastructure python package can be used by domain-specific services to create and manage
+Digital Objects (Kahn & Wilensky 2006). On the user's side, high-level APIs provide simplified interaction with 
+the backend Digital Object / Persistent Identifier infrastructure. The basic idea is that users do not have to know
+about Digital Objects and their storage methods at all, and just get a plain view of events and (perhaps) PIDs.  
 
 Contents:
 
@@ -13,6 +18,8 @@ Contents:
    
    infrastructure
    digitalobject
+   
+
 
 
 

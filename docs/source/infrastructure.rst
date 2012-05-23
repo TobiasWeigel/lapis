@@ -1,16 +1,28 @@
 .. _infrastructure:
 
+======================
 Infrastructure classes
 ======================
 
-The infrastructural abstraction layer is formed through a class hierarchy with the class DOInfrastructure_ 
-at the top. The class forms a Factory pattern and can manufacture instances of Python-native DigitalObject_ instances.
+The infrastructural abstraction layer is formed through a class hierarchy with the class `DOInfrastructure`_
+at the top. The class forms a Factory pattern and can manufacture instances of Python-native :doc:`digitalobject` instances.
 The basic idea is that user code can request new or retrieve existing Digital Objects through the factory and
 interact with the Digital Objects natively. The DigitalObject methods redirect calls to the underlying Infrastructure
 instance, which will map them, to a physical PID/DO infrastructure such as the Handle System.
 
-.. autoclass::dkrz.digitalobjects.infra.infrastructure.DOInfrastructure
+.. _doinfrastructure:
 
-.. autoclass::dkrz.digitalobjects.infra.infrastructure.InMemoryInfrastructure
+Infrastructure Base Class
+------------------------- 
 
-.. autoclass::dkrz.digitalobjects.infra.handleinfrastructure.HandleInfrastructure 
+.. autoclass:: dkrz.digitalobjects.infra.infrastructure.DOInfrastructure
+
+In-Memory-Infrastructure Class
+------------------------------
+
+.. autoclass:: dkrz.digitalobjects.infra.infrastructure.InMemoryInfrastructure
+
+Handle Infrastructure Class
+---------------------------
+
+.. autoclass:: dkrz.digitalobjects.infra.handleinfrastructure.HandleInfrastructure 
