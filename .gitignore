@@ -2,3 +2,6 @@
 /.project
 /.pydevproject
 *.pyc
+/doc/html
+.settings
+/docs/build
