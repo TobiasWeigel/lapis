@@ -100,6 +100,7 @@ class DigitalObject(object):
     def _set_resource_location(self, location):
         """
         Sets the resource location of this DO.
+        
         :param location: A string which provides domain-relevant information about the location of the referenced
             resource.
         """

@@ -26,3 +26,8 @@ Handle Infrastructure Class
 ---------------------------
 
 .. autoclass:: dkrz.digitalobjects.infra.handleinfrastructure.HandleInfrastructure 
+
+Exceptions
+----------
+
+.. autoexception:: dkrz.digitalobjects.infra.handleinfrastructure.PIDAlreadyExistsError

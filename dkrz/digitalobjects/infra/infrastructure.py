@@ -37,8 +37,9 @@ class DOInfrastructure(object):
         :param do_class: The class of DO to manufacture. Defaults to None, which will generate this infrastructure's
             default PID class. Not every infrastructure will support different classes of objects.
         :param identifier: The identifier string to use for the new instance. If None, the method will use a random 
-            identifier.
-        :raises PIDAlreadyExistsError: If the given identifier already exists. No new PID will be allocated and no DO 
+            identifier (example: ``o9f9-oimx-7o8v-d0zt``)
+        :return: A new :class:`.DigitalObject` instance
+        :raises: :exc:`.PIDAlreadyExistsError` if the given identifier already exists. No new PID will be allocated and no DO 
           will be created. 
         """
         id = identifier
@@ -64,6 +65,11 @@ class DOInfrastructure(object):
         Generates a random identifier string. The uniqueness of the identifier is likely but cannot be guaranteed.
         Any code using this function must synchronously check for the existence of the generated identifier before
         acquiring it for a new object.
+        
+        The random identifier is currently composed of 4 blocks of 4 alphanumeric characters. 
+        Example: ``o9f9-oimx-7o8v-d0zt``
+        
+        :return: A random String
         """
         # generate a 16 character long random hash
         allowed = string.ascii_lowercase+string.digits
@@ -72,6 +78,7 @@ class DOInfrastructure(object):
     def _acquire_pid(self, identifier):
         """
         Tries to acquire the given identifier. May fail if the identifier is already taken.
+        
         :raises PIDAlreadyExistsError: if the identifier is already taken.
         :return: The acquired identifier. This may slightly differ from the given identifier (special pre-/suffixes).
         """
@@ -80,8 +87,9 @@ class DOInfrastructure(object):
     def lookup_pid(self, identifier):
         """
         Resolves the given identifier string to a Digital Object.
+        
         :param identifier: the full identifier string to resolve.
-        :return: a Digital Object or None if the identifier is still unassigned.
+        :return: a :py:class:`.DigitalObject` or None if the identifier is still unassigned.
         """
         raise NotImplementedError()
     
@@ -90,6 +98,7 @@ class DOInfrastructure(object):
         Writes the annotations for the object with the given identifier. All existing annotations, even for keys not 
         in the given annotations dict, are cleared prior to rewrite, i.e. the method performs a full replacement 
         operation. Thus, you can also use this method to clear all annotations.
+        
         :param identifier: string identifier, i.e. the Digital Object's PID.
         :param annotations: a dict with string keys and arbitrarily typed values.
         """
@@ -99,6 +108,7 @@ class DOInfrastructure(object):
         """
         Sets the annotation of the object with given identifier and key to the given value. Annotations of other 
         keys remain unchanged.
+        
         :param identifier: string identifier, i.e. the Digital Object's PID.
         :param key: string key.
         :param value: arbitrarily typed value.
@@ -109,6 +119,7 @@ class DOInfrastructure(object):
         """
         Sets the resource location for the Digital Object with given identifier, i.e. sets the data of the Digital 
         Object to an external resource.
+        
         :param resource_location: the resource location (string).
         :param resource_type: the type of resource existing at the location. Defaults to None for unspecified resource
           type. 
@@ -118,6 +129,8 @@ class DOInfrastructure(object):
     def delete_do(self, identifier):
         """
         Deletes the Digital Object with given identifier. Be careful, this operation cannot be undone!
+        
+        :raises: :exc:`KeyError` if no object exists with the given identifier 
         """
         raise NotImplementedError()
     
@@ -210,4 +223,7 @@ class InMemoryInfrastructure(DOInfrastructure):
         
     
 class PIDAlreadyExistsError(Exception):
+    """
+    Exception thrown when trying to acquire an already existing PID. 
+    """
     pass
