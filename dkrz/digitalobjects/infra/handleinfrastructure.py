@@ -1,7 +1,7 @@
 '''
 Created on 03.05.2012
 
-@author: tobiasweigel
+:author: tobiasweigel
 '''
 from dkrz.digitalobjects.infra.infrastructure import DOInfrastructure, PIDAlreadyExistsError
 from httplib import HTTPConnection
@@ -35,10 +35,10 @@ class HandleInfrastructure(DOInfrastructure):
         '''
         Constructor.
         
-        @param prefix: The Handle prefix to use (without trailing slash). If not given, all operations will work
+        :param prefix: The Handle prefix to use (without trailing slash). If not given, all operations will work
           nonetheless, except for random handle creation. Note that setting a prefix does not mean that identifier 
           strings can omit it - all identifiers must ALWAYS include the prefix, no matter what.
-        @param additional_identifier_element: A string that is inserted inbetween Handle prefix and suffix, e.g. if set
+        :param additional_identifier_element: A string that is inserted inbetween Handle prefix and suffix, e.g. if set
           to "test-", 10876/identifier becomes 10876/test-identifier.
         '''
         super(HandleInfrastructure, self).__init__()

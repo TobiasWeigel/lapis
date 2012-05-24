@@ -1,7 +1,7 @@
 """
 Created on 20.04.2012
 
-@author: tobiasweigel
+:author: tobiasweigel
 """
 
 VALUETYPE_DATA = 0
@@ -30,14 +30,14 @@ class DigitalObject(object):
         Constructor. Only called by the factory or other infrastructure methods that construct/reconstruct KeyMD 
         instances.
 
-        @param do_infrastructure: The DO infrastructure interface to use.
-        @param identifier: The already acquired identifier to associate the object with.
-        @param annotations: The annotations to initialize the metadata with. Note that the given dict is not copied, but
+        :param do_infrastructure: The DO infrastructure interface to use.
+        :param identifier: The already acquired identifier to associate the object with.
+        :param annotations: The annotations to initialize the metadata with. Note that the given dict is not copied, but
           assigned directly. Also note that independent of the particular infrastructure, no resource location or
           object-type entries should be given in the annotations dict.
-        @param resource_location: The resource location of the Digital Object's data, in case of external data.
-        @param resource_type: The resource type for external data. Note that resource_location and resource_type are not
-        checked for consistency by the constructor. It is the caller's task to provide meaningful values.
+        :param resource_location: The resource location of the Digital Object's data, in case of external data.
+        :param resource_type: The resource type for external data. Note that resource_location and resource_type are not
+          checked for consistency by the constructor. It is the caller's task to provide meaningful values.
         """
         if not isinstance(annotations, dict):
             raise TypeError("Invalid type for annotations of a Digital Object: %s; contents: %s" % (type(annotations), repr(annotations)))
@@ -57,7 +57,7 @@ class DigitalObject(object):
         """
         Overwrites all annotations for this DO with the new ones given in a dictionary.
         
-        @param annotations: New annotations to replace the old ones (if any). Must be a dictionary.  
+        :param annotations: New annotations to replace the old ones (if any). Must be a dictionary.  
         """
         self._annotations = annotations.copy()
         self._do_infra._write_all_annotations(self._id, annotations)
@@ -66,9 +66,9 @@ class DigitalObject(object):
         """
         Sets the annotation with given key to a new value.
         
-        @param key: A string key. A key may also be seen as a type, but note that this is not a data type in the strict 
+        :param key: A string key. A key may also be seen as a type, but note that this is not a data type in the strict 
           sense, but rather a semantic specification (i.e. 'e-mail' or 'url', where the data type is both String).
-        @param value: An arbitrarily typed value.
+        :param value: An arbitrarily typed value.
         """
         key_s = str(key)
         self._annotations[key_s] = value
@@ -78,8 +78,8 @@ class DigitalObject(object):
         """
         Returns the annotation value for the given key.
         
-        @param key: A string key.
-        @return: The value associated with the key or None if key did not exist
+        :param key: A string key.
+        :returns: The value associated with the key or None if key did not exist
         """
         key_s = str(key)
         return self._annotations.get(key_s)
@@ -100,7 +100,7 @@ class DigitalObject(object):
     def _set_resource_location(self, location):
         """
         Sets the resource location of this DO.
-        @param location: A string which provides domain-relevant information about the location of the referenced
+        :param location: A string which provides domain-relevant information about the location of the referenced
             resource.
         """
         self._resource_location = location

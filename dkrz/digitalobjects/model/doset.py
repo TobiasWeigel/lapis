@@ -1,7 +1,7 @@
 '''
 Created on 02.05.2012
 
-@author: tobiasweigel
+:author: tobiasweigel
 '''
 from dkrz.digitalobjects.model.do import DigitalObject
 
@@ -23,7 +23,7 @@ class DigitalObjectSet(DigitalObject):
     def add_do(self, dobj):
         """
         Adds one or more Digital Objects to the set.
-        @param dobj: Either a DO instance or a list of DO instances.  
+        :param dobj: Either a DO instance or a list of DO instances.  
         """
         if isinstance(dobj, list):
             for x in dobj:
@@ -38,7 +38,7 @@ class DigitalObjectSet(DigitalObject):
     def remove_do(self, dobj):
         """
         Removes the given PID object(s) from the set.
-        @param dobj: Either a PID instance or a list of PID instances.
+        :param dobj: Either a PID instance or a list of PID instances.
         """
         if isinstance(dobj, list):
             for x in dobj:
@@ -53,8 +53,8 @@ class DigitalObjectSet(DigitalObject):
     def contains_do(self, dobj):
         """
         Check if the set contains the given PID(s).
-        @param dobj: A DO instance or a list of DO instances.
-        @return: True if all given Digital Objects are contained in this set.
+        :param dobj: A DO instance or a list of DO instances.
+        :return: True if all given Digital Objects are contained in this set.
         """
         if isinstance(dobj, list):
             for x in dobj:
@@ -71,7 +71,7 @@ class DigitalObjectSet(DigitalObject):
     def iterate(self):
         """
         Iterate over the elements in the Digital Object set.
-        @return: an iterator object
+        :return: an iterator object
         """
         return iter(self.elements)
     

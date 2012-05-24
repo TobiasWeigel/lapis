@@ -1,7 +1,7 @@
 '''
 Created on 20.04.2012
 
-@author: tobiasweigel
+:author: tobiasweigel
 '''
 from random import Random
 import string
@@ -25,7 +25,8 @@ class DOInfrastructure(object):
     def set_random_seed(self, seed):
         """
         Sets the random seed for the random identifier name generator.
-        @param seed: the seed to use. 
+        
+        :param seed: the seed to use. 
         """
         self._random.seed(seed)
         
@@ -33,11 +34,11 @@ class DOInfrastructure(object):
         """
         Factory method. Creates a new DO and returns the instance.
         
-        @param do_class: The class of DO to manufacture. Defaults to None, which will generate this infrastructure's
+        :param do_class: The class of DO to manufacture. Defaults to None, which will generate this infrastructure's
             default PID class. Not every infrastructure will support different classes of objects.
-        @param identifier: The identifier string to use for the new instance. If None, the method will use a random 
+        :param identifier: The identifier string to use for the new instance. If None, the method will use a random 
             identifier.
-        @raise PIDAlreadyExistsError: If the given identifier already exists. No new PID will be allocated and no DO 
+        :raises PIDAlreadyExistsError: If the given identifier already exists. No new PID will be allocated and no DO 
           will be created. 
         """
         id = identifier
@@ -71,16 +72,16 @@ class DOInfrastructure(object):
     def _acquire_pid(self, identifier):
         """
         Tries to acquire the given identifier. May fail if the identifier is already taken.
-        @raises PIDAlreadyExistsError: if the identifier is already taken.
-        @return: The acquired identifier. This may slightly differ from the given identifier (special pre-/suffixes).
+        :raises PIDAlreadyExistsError: if the identifier is already taken.
+        :return: The acquired identifier. This may slightly differ from the given identifier (special pre-/suffixes).
         """
         raise NotImplementedError()
     
     def lookup_pid(self, identifier):
         """
         Resolves the given identifier string to a Digital Object.
-        @param identifier: the full identifier string to resolve.
-        @return: a Digital Object or None if the identifier is still unassigned.
+        :param identifier: the full identifier string to resolve.
+        :return: a Digital Object or None if the identifier is still unassigned.
         """
         raise NotImplementedError()
     
@@ -89,8 +90,8 @@ class DOInfrastructure(object):
         Writes the annotations for the object with the given identifier. All existing annotations, even for keys not 
         in the given annotations dict, are cleared prior to rewrite, i.e. the method performs a full replacement 
         operation. Thus, you can also use this method to clear all annotations.
-        @param identifier: string identifier, i.e. the Digital Object's PID.
-        @param annotations: a dict with string keys and arbitrarily typed values.
+        :param identifier: string identifier, i.e. the Digital Object's PID.
+        :param annotations: a dict with string keys and arbitrarily typed values.
         """
         raise NotImplementedError()
     
@@ -98,9 +99,9 @@ class DOInfrastructure(object):
         """
         Sets the annotation of the object with given identifier and key to the given value. Annotations of other 
         keys remain unchanged.
-        @param identifier: string identifier, i.e. the Digital Object's PID.
-        @param key: string key.
-        @param value: arbitrarily typed value.
+        :param identifier: string identifier, i.e. the Digital Object's PID.
+        :param key: string key.
+        :param value: arbitrarily typed value.
         """
         raise NotImplementedError()
     
@@ -108,8 +109,8 @@ class DOInfrastructure(object):
         """
         Sets the resource location for the Digital Object with given identifier, i.e. sets the data of the Digital 
         Object to an external resource.
-        @param resource_location: the resource location (string).
-        @param resource_type: the type of resource existing at the location. Defaults to None for unspecified resource
+        :param resource_location: the resource location (string).
+        :param resource_type: the type of resource existing at the location. Defaults to None for unspecified resource
           type. 
         """
         raise NotImplementedError()

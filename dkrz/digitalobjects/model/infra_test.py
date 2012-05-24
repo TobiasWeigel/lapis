@@ -1,7 +1,7 @@
 '''
 Created on 03.05.2012
 
-@author: tobiasweigel
+:author: tobiasweigel
 '''
 import unittest
 from dkrz.digitalobjects.infra.infrastructure import InMemoryInfrastructure, PIDAlreadyExistsError
