@@ -11,6 +11,8 @@ from random import Random
 import logging
 from dkrz.digitalobjects.infra.handleinfrastructure import HandleInfrastructure
 
+from dkrz.digitalobjects.model.do import DigitalObject
+
 class TestDOInfrastructure(unittest.TestCase):
     
     def setUp(self):
@@ -90,4 +92,24 @@ class TestHandleInfrastructure(TestDOInfrastructure):
             except IOError, exc:
                 self.logger.info("Could not delete test identifier %s" % dobj)
         
+        
+
+class TestPIDRegExp(unittest.TestCase):
+    
+    def test_pids(self):
+        assert DigitalObject.is_PID("12345/123-456-abc-def") == True
+        assert DigitalObject.is_PID("12345/123 456 abc def") == True
+        assert DigitalObject.is_PID("12345/123/123/123") == True
+        assert DigitalObject.is_PID("12345") == False
+        assert DigitalObject.is_PID("12345./123") == False
+        assert DigitalObject.is_PID("a12345/123") == False
+        assert DigitalObject.is_PID("A12345/123") == False
+
+        assert DigitalObject.is_PID("0.TYPE/TEST_TYPE") == True
+        assert DigitalObject.is_PID("0.TYPE/TEST_TYPE with something added") == True
+        assert DigitalObject.is_PID("0.TYPE/") == False
+        assert DigitalObject.is_PID("0.TYPE") == False
+        assert DigitalObject.is_PID("0.TYPE.SUBTYPE/TEST_TYPE") == True
+
+        assert DigitalObject.is_PID("Hello World!") == False
         

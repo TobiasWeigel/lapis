@@ -4,7 +4,11 @@ Created on 20.04.2012
 :author: tobiasweigel
 """
 
+import re
+
 VALUETYPE_DATA = 0
+
+REGEX_PID = re.compile(r'^\d\w*(\.?\w+)*/.+')
 
 class DigitalObject(object):
     """
@@ -49,10 +53,6 @@ class DigitalObject(object):
         if resource_type and not resource_location:
             raise ValueError("You cannot provide a resource type, but no resource location!")
         
-    def __hash__(self, *args, **kwargs):
-        return self._id
-      
-
     def set_annotations(self, annotations):
         """
         Overwrites all annotations for this DO with the new ones given in a dictionary.
@@ -132,11 +132,83 @@ class DigitalObject(object):
     
     identifier = property(__get_id, doc="The full identifier of this Digital Object (read-only).")
 
+    def __str__(self, *args, **kwargs):
+        return self._id
+    
+    def __hash__(self, *args, **kwargs):
+        return hash(self._id)
     
     def add_do_reference(self, semantics, reference):
         """
-        Adds a Digital Object reference.
+        Adds a reference to another Digital Object.
         
-        :param semantics: A string that 
-        """    
+        :param semantics: A string or Digital Object describing the semantics of this relation. In case of a string, the
+          semantics are only interpretable by humans or specialized user code. Using a Digital Object provides a safe 
+          method to formalize semantics.
+        :param reference: The referenced entity. Must be either a PID string or (preferably) a Digital Object.
+        """
+        raise NotImplementedError()
+        
+    def remove_do_reference(self, semantics, reference):
+        """
+        Removes the given reference to the given object.
+        
+        :param semantics: Indicates the relationship that should be removed. Can be either a PID or a Digital Object 
+          instance. Can also be an arbitrary String in case of user-only semantics.
+        :param reference: The referenced object whose relationship should be removed. Can be a Digital Object or a PID.
+        :raises: :exc:`KeyError` if a given identifier could not be resolved
+        :returns: True on success, False if the specified reference did not exist
+        """
+        raise NotImplementedError()
 
+    def remove_do_references(self, semantics):
+        """
+        Removes all references of given semantics to any object.
+        
+        :param semantics: Indicates the relationship that should be removed. Can be either a PID or a Digital Object
+          instance. Can also be an arbitrary String in case of user-only semantics.
+        :raises: :exc:`KeyError` if semantics was a syntactically valid PID that however was unresolvable.
+        :returns: True if references of given semantics existed and all of them were removed, False if no references with given semantics 
+        existed
+        """
+        raise NotImplementedError()
+        
+    def get_references(self, semantics):
+        """
+        Retrieves all referenced objects where the relationship type is the given semantics.
+        
+        :param semantics: Indicates the relationship that is to be resolved.
+        :raises: :exc:`KeyError` if semantics was a syntactically valid PID that however was unresolvable.
+        :returns: A list of Digital Objects that matches the given relationship. The list will be empty if no such 
+        relationships exist.
+        """ 
+        raise NotImplementedError()
+
+    def clear_references(self, semantics=None):
+        """
+        Clears all references or all references that match the given semantics.
+        
+        :param semantics: If not None, only references will be removed that have the given relationship.
+        :raises: :exc:`KeyError` if semantics was a syntactically valid PID that however was unresolvable.
+        """
+        raise NotImplementedError()
+        
+    @staticmethod
+    def is_PID(s):
+        """
+        Checks whether the given string looks like a syntactically valid PID.
+        
+        Syntactically valid PIDs are described as:
+        
+            PID := Prefix, '/', Suffix;
+            Suffix := { ? any character ? }
+            Prefix := ? digit ?, { PrefixChar }, [ { Subprefix } ]
+            Subprefix := '.', PrefixChar, { PrefixChar }
+            PrefixChar := 'a'-'z' | 'A'-'Z' | '0'-'9' | '_'
+        
+        :returns: True or False
+        """
+        if REGEX_PID.match(s):
+            return True
+        else:
+            return False 
