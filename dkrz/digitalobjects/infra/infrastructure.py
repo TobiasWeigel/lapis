@@ -149,7 +149,12 @@ class InMemoryInfrastructure(DOInfrastructure):
         DO infrastructures and thus better suited for testing.
         """
         
-        def __init__(self, do):
+        def __init__(self):
+            self._annotations = {}
+            self._resource_location = None
+            self._resource_type = None
+        
+        def read_from_do(self, do):
             """
             Takes the given DO instance and stores its content in special attributes. Will not store the DO instance 
             itself!
@@ -179,7 +184,7 @@ class InMemoryInfrastructure(DOInfrastructure):
         # calling superclass method here will also cause _acquire_pid to be called
         dobj = DOInfrastructure.create_do(self, identifier, do_class)
         # store new InMemoryElement in storage
-        self._storage[dobj.identifier] = InMemoryInfrastructure.InMemoryElement(dobj)
+        self._storage[dobj.identifier].read_from_do(dobj)
         return dobj
     
     def delete_do(self, identifier):
@@ -188,7 +193,7 @@ class InMemoryInfrastructure(DOInfrastructure):
     def _acquire_pid(self, identifier):
         if identifier in self._storage:
             raise PIDAlreadyExistsError()
-        self._storage[identifier] = 0 # dummy value to reserve key
+        self._storage[identifier] = InMemoryInfrastructure.InMemoryElement() # empty object to reserve key
         
     def lookup_pid(self, identifier):
         ele = self._storage.get(identifier)
@@ -219,7 +224,7 @@ class InMemoryInfrastructure(DOInfrastructure):
         ele = self._storage.get(identifier)
         if not ele:
             raise KeyError
-        ele.a_annotations = annotations
+        ele._annotations = annotations
         
     
 class PIDAlreadyExistsError(Exception):
