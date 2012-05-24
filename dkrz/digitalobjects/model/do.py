@@ -33,7 +33,8 @@ class DigitalObject(object):
         :param do_infrastructure: The DO infrastructure interface to use.
         :param identifier: The already acquired identifier to associate the object with.
         :param annotations: The annotations to initialize the metadata with. Note that independent of the particular 
-        infrastructure, no resource location or object-type entries should be given in the annotations dict.
+        infrastructure, no resource location or object-type entries should be given in the annotations dict. Also note
+        that the annotations dict is assigned directly, not copied.
         :param resource_location: The resource location of the Digital Object's data, in case of external data.
         :param resource_type: The resource type for external data. Note that resource_location and resource_type are not
           checked for consistency by the constructor. It is the caller's task to provide meaningful values.
@@ -42,12 +43,11 @@ class DigitalObject(object):
             raise TypeError("Invalid type for annotations of a Digital Object: %s; contents: %s" % (type(annotations), repr(annotations)))
         self._id = identifier
         self._do_infra = do_infrastructure
+        self._resource_location = resource_location
+        self._resource_type = resource_type
+        self._annotations = annotations
         if resource_type and not resource_location:
             raise ValueError("You cannot provide a resource type, but no resource location!")
-        # call private methods to forward values to the DO infra
-        self.set_annotations(annotations)
-        self._set_resource_location(resource_location)
-        self._set_resource_type(resource_type)
         
     def __hash__(self, *args, **kwargs):
         return self._id
