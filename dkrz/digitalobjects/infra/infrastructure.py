@@ -165,6 +165,7 @@ class InMemoryInfrastructure(DOInfrastructure):
             self._annotations = {}
             self._resource_location = None
             self._resource_type = None
+            self._references = {}
         
         def read_from_do(self, do):
             """
@@ -176,15 +177,15 @@ class InMemoryInfrastructure(DOInfrastructure):
                 self._annotations[k] = v 
             self._resource_location = do.resource_location
             self._resource_type = do.resource_type
+            self._references = {}
+            for k in do.iter_reference_keys():
+                self._references[k] = do.get_references(k)
             
         def build_do_instance(self, do_infra, identifier):
             """
             Generates a PID instance from the information stored in this memory element object.
             """
-            dobj = DigitalObject(do_infra, identifier)
-            dobj._resource_location = self._resource_location
-            dobj._resource_type = self._resource_type
-            dobj.set_annotations(self._annotations)
+            dobj = DigitalObject(do_infra, identifier, self._annotations, self._resource_location, self._resource_type, self._references)
             return dobj
     
     def __init__(self):
@@ -238,6 +239,11 @@ class InMemoryInfrastructure(DOInfrastructure):
             raise KeyError
         ele._annotations = annotations
         
+    def _write_reference(self, identifier, key, reference):
+        ele = self._storage.get(identifier)
+        if not ele:
+            raise KeyError
+        ele._references[key] = reference
     
 class PIDAlreadyExistsError(Exception):
     """
