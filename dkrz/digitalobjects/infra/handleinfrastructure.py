@@ -187,7 +187,7 @@ class HandleInfrastructure(DOInfrastructure):
         if not(200 <= resp.status <= 299):
             raise IOError("Unknown Handle: %s" % identifier)
         dodata = json.load(resp)
-        index = self._determine_index(dodata, key, ANNOTATION_INDEX_START)
+        index = self._determine_index(identifier, dodata, key, ANNOTATION_INDEX_START)
         # now we can write the annotation
         http = HTTPConnection(self.host, self.port)
         data = json.dumps([{"index": index, "type": key, "data": value}])
@@ -256,7 +256,7 @@ class HandleInfrastructure(DOInfrastructure):
         if not(200 <= resp.status <= 299):
             raise IOError("Unknown Handle: %s" % identifier)
         dodata = json.load(resp)
-        index = self._determine_index(dodata, key, REFERENCE_INDEX_START, REFERENCE_INDEX_END)
+        index = self._determine_index(identifier, dodata, key, REFERENCE_INDEX_START, REFERENCE_INDEX_END)
         # now we can write the reference; note that reference may be a list. But this is okay, we
         # take care of lists in the JSON-to-DO method
         http = HTTPConnection(self.host, self.port)
