@@ -134,6 +134,18 @@ class DOInfrastructure(object):
         """
         raise NotImplementedError()
     
+    def _write_reference(self, identifier, key, reference):
+        """
+        Sets the reference of the object with given identifier and key to the given value. Other reference entries
+        remain unchanged.
+        
+        :param identifier: string identifier, i.e. the Digital Object's PID.
+        :param key: string key.
+        :param value: arbitrarily typed value. Can be a list. If value is None, 0, empty list etc., the method will
+          try to remove the entry.        
+        """
+        raise NotImplementedError()
+    
     
 class InMemoryInfrastructure(DOInfrastructure):
     """

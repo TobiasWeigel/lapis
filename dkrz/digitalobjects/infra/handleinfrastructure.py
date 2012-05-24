@@ -12,9 +12,19 @@ INDEX_RESOURCE_LOCATION = 1
 INDEX_RESOURCE_TYPE = 2
 
 """
+At which Handle value index do we begin with reference information?
+"""
+REFERENCE_INDEX_START = 1000
+
+"""
+The highest Handle value index for reference information
+"""
+REFERENCE_INDEX_END = 1999
+
+"""
 At which Handle value index do we begin with annotation information?
 """
-FREE_INDEX_START = 1000
+ANNOTATION_INDEX_START = 2000
 
 TYPE_RESOURCE_TYPE = "10876/__TYPES/RESOURCE_TYPE"
 
@@ -93,6 +103,7 @@ class HandleInfrastructure(DOInfrastructure):
     def _do_from_json(self, piddata, identifier):
         # piddata is an array of dicts, where each dict has keys: index, type, data
         annotations = {}
+        references = {}
         res_loc = None
         res_type = None
         for ele in piddata:
@@ -106,16 +117,22 @@ class HandleInfrastructure(DOInfrastructure):
             if ele["type"] == "HS_ADMIN":
                 # ignore HS_ADMIN values; these are taken care of by the REST service server-side
                 continue
-            if ele["type"] in annotations:
+            if ele["type"] in annotations and idx >= ANNOTATION_INDEX_START:
                 # multiple data for one key.. allowed in Handles, but not in our PIDs. --> Construct a list.
                 if isinstance(annotations[ele["type"]], list):
                     annotations[ele["type"]].append(ele["data"])
                 else:
                     annotations[ele["type"]] = [annotations[ele["type"]], ele["data"]]
                 continue
-            # no special circumstances --> assign to annotations
+            # no special circumstances --> assign to annotations or references
+            if REFERENCE_INDEX_END >= idx >= REFERENCE_INDEX_START:
+                if ele["type"] not in references:
+                    references[ele["type"]] = [ele["data"]]
+                else:
+                    references[ele["type"]].append(ele["data"])
+                continue
             annotations[ele["type"]] = ele["data"]
-        return DigitalObject(self, identifier, annotations, res_loc, res_type)
+        return DigitalObject(self, identifier, annotations, res_loc, res_type, references)
         
     def lookup_pid(self, identifier):
         http = HTTPConnection(self.host, self.port)
@@ -131,6 +148,36 @@ class HandleInfrastructure(DOInfrastructure):
             dobj = self._do_from_json(json.load(resp), identifier)
             return dobj            
         
+    def _determine_index(self, identifier, handledata, key, index_start, index_end=None):
+        """
+        Finds an index in the Handle key-metadata record to store a value for the given key. If the key is already
+        present, its index will be reused. If it is not present, a free index will be determined. 
+        
+        :param identifier: The current Handle.
+        :param key: The key that will be assigned.
+        :param index_start: At which index the search should start.
+        :param index_end: Where should the search end? Use None to search all indices greater than the start index.
+        :raises: :exc:`IndexError` if all possible indices are already taken by other keys.
+        :returns: an index value. 
+        """
+        matching_values = []
+        free_index = index_start
+        for ele in handledata:
+            if ele["type"] == key:
+                matching_values.append(ele)
+            if int(ele["index"]) >= free_index:
+                free_index = int(ele["index"])+1
+                if index_end and (free_index > index_end):
+                    raise IndexError("No free index available!")
+        if len(matching_values) > 1:
+            raise IllegalHandleStructureError("Handle %s contains more than one entry of type %s!" % (identifier, key))
+        elif len(matching_values) == 1:
+            return matching_values[0]["index"]
+        else:
+            # key not present in Handle; must assign a new index
+            return free_index
+        
+        
     def _write_annotation(self, identifier, key, value):
         http = HTTPConnection(self.host, self.port)
         path, identifier = self._prepare_identifier(identifier)
@@ -140,20 +187,7 @@ class HandleInfrastructure(DOInfrastructure):
         if not(200 <= resp.status <= 299):
             raise IOError("Unknown Handle: %s" % identifier)
         dodata = json.load(resp)
-        matching_values = []
-        free_index = FREE_INDEX_START
-        for ele in dodata:
-            if ele["type"] == key:
-                matching_values.append(ele)
-            if int(ele["index"]) >= free_index:
-                free_index = int(ele["index"])+1
-        if len(matching_values) > 1:
-            raise IllegalHandleStructureError("Handle %s contains more than one entry of type %s!" % (identifier, key))
-        elif len(matching_values) == 1:
-            index = matching_values[0]["index"]
-        else:
-            # key not present in Handle; must assign a new index
-            index = free_index
+        index = self._determine_index(dodata, key, ANNOTATION_INDEX_START)
         # now we can write the annotation
         http = HTTPConnection(self.host, self.port)
         data = json.dumps([{"index": index, "type": key, "data": value}])
@@ -181,7 +215,7 @@ class HandleInfrastructure(DOInfrastructure):
         # convert annotations to Handle values
         handle_values = [{"index": INDEX_RESOURCE_TYPE, "type": TYPE_RESOURCE_TYPE, "data": res_type},
                            {"index": INDEX_RESOURCE_LOCATION, "type": "", "data": resource_location}]
-        current_index = FREE_INDEX_START
+        current_index = ANNOTATION_INDEX_START
         for k, v in annotations.iteritems():
             handle_values.append({"index": current_index, "type": k, "data": v})
             current_index += 1
@@ -212,3 +246,23 @@ class HandleInfrastructure(DOInfrastructure):
         resp = http.getresponse()
         if not(200 <= resp.status <= 299):
             raise IOError("Could not delete Handle %s: %s" % (identifier, resp.reason))
+
+    def _write_reference(self, identifier, key, reference):
+        http = HTTPConnection(self.host, self.port)
+        path, identifier = self._prepare_identifier(identifier)
+        # first, we need to determine the index to use by looking at the key
+        http.request("GET", path)
+        resp = http.getresponse()
+        if not(200 <= resp.status <= 299):
+            raise IOError("Unknown Handle: %s" % identifier)
+        dodata = json.load(resp)
+        index = self._determine_index(dodata, key, REFERENCE_INDEX_START, REFERENCE_INDEX_END)
+        # now we can write the reference; note that reference may be a list. But this is okay, we
+        # take care of lists in the JSON-to-DO method
+        http = HTTPConnection(self.host, self.port)
+        data = json.dumps([{"index": index, "type": key, "data": reference}])
+        http.request("POST", path, data, DEFAULT_JSON_HEADERS)
+        resp = http.getresponse()
+        if not(200 <= resp.status <= 299):
+            raise IOError("Could not write references to Handle %s: %s" % (identifier, resp.reason))
+            
