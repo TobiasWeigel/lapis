@@ -32,39 +32,43 @@ class DigitalObject(object):
 
         :param do_infrastructure: The DO infrastructure interface to use.
         :param identifier: The already acquired identifier to associate the object with.
-        :param annotations: The annotations to initialize the metadata with. Note that the given dict is not copied, but
-          assigned directly. Also note that independent of the particular infrastructure, no resource location or
-          object-type entries should be given in the annotations dict.
+        :param annotations: The annotations to initialize the metadata with. Note that independent of the particular 
+        infrastructure, no resource location or object-type entries should be given in the annotations dict.
         :param resource_location: The resource location of the Digital Object's data, in case of external data.
         :param resource_type: The resource type for external data. Note that resource_location and resource_type are not
           checked for consistency by the constructor. It is the caller's task to provide meaningful values.
         """
         if not isinstance(annotations, dict):
             raise TypeError("Invalid type for annotations of a Digital Object: %s; contents: %s" % (type(annotations), repr(annotations)))
-        self._annotations = annotations
         self._id = identifier
         self._do_infra = do_infrastructure
-        self._resource_location = resource_location
-        self._resource_type = resource_type
         if resource_type and not resource_location:
             raise ValueError("You cannot provide a resource type, but no resource location!")
+        # call private methods to forward values to the DO infra
+        self._set_annotations(annotations)
+        self._set_resource_location(resource_location)
+        self._set_resource_type(resource_type)
         
     def __hash__(self, *args, **kwargs):
         return self._id
       
 
-    def set_annotations(self, annotations):
+    def _set_annotations(self, annotations):
         """
         Overwrites all annotations for this DO with the new ones given in a dictionary.
+        
+        Remember that, in theory, annotations are not supposed to change after a DO has been created.
         
         :param annotations: New annotations to replace the old ones (if any). Must be a dictionary.  
         """
         self._annotations = annotations.copy()
         self._do_infra._write_all_annotations(self._id, annotations)
         
-    def set_annotation(self, key, value):
+    def _set_annotation(self, key, value):
         """
         Sets the annotation with given key to a new value.
+
+        Remember that, in theory, annotations are not supposed to change after a DO has been created.
         
         :param key: A string key. A key may also be seen as a type, but note that this is not a data type in the strict 
           sense, but rather a semantic specification (i.e. 'e-mail' or 'url', where the data type is both String).
@@ -90,9 +94,11 @@ class DigitalObject(object):
         """
         return self._annotations.iteritems()
         
-    def clear_annotations(self):
+    def _clear_annotations(self):
         """
         Clears all annotations. This does not affect the resource location and similar informations.
+
+        Remember that, in theory, annotations are not supposed to change after a DO has been created.
         """
         self._annotations = {}
         self._do_infra._write_all_annotations(self._id, {})
@@ -125,5 +131,6 @@ class DigitalObject(object):
         return self._id
     
     identifier = property(__get_id, doc="The full identifier of this Digital Object (read-only).")
+
     
 
