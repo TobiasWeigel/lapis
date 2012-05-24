@@ -255,7 +255,13 @@ class DigitalObject(object):
             # assume r is a string PID
             dobj = self._do_infra.lookup_pid(r)
             res.append(dobj)
-        return res            
+        return res
+    
+    def iter_reference_keys(self):
+        """
+        Returns an iterator over all reference keys.
+        """
+        return self._references.iterkeys()
          
 
     @staticmethod
