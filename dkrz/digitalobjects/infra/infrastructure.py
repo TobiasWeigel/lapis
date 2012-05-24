@@ -72,7 +72,7 @@ class DOInfrastructure(object):
         :return: A random String
         """
         # generate a 16 character long random hash
-        allowed = string.ascii_lowercase+string.digits
+        allowed = "abcdefghkmnpqrstuvwxyz"+string.digits
         return "-".join("".join([self._random.choice(allowed) for i in range(0, 4)]) for j in range(0, 4))
     
     def _acquire_pid(self, identifier):
