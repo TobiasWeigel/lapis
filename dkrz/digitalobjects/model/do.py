@@ -45,7 +45,7 @@ class DigitalObject(object):
         if resource_type and not resource_location:
             raise ValueError("You cannot provide a resource type, but no resource location!")
         # call private methods to forward values to the DO infra
-        self._set_annotations(annotations)
+        self.set_annotations(annotations)
         self._set_resource_location(resource_location)
         self._set_resource_type(resource_type)
         
@@ -53,7 +53,7 @@ class DigitalObject(object):
         return self._id
       
 
-    def _set_annotations(self, annotations):
+    def set_annotations(self, annotations):
         """
         Overwrites all annotations for this DO with the new ones given in a dictionary.
         
@@ -64,7 +64,7 @@ class DigitalObject(object):
         self._annotations = annotations.copy()
         self._do_infra._write_all_annotations(self._id, annotations)
         
-    def _set_annotation(self, key, value):
+    def set_annotation(self, key, value):
         """
         Sets the annotation with given key to a new value.
 
@@ -94,7 +94,7 @@ class DigitalObject(object):
         """
         return self._annotations.iteritems()
         
-    def _clear_annotations(self):
+    def clear_annotations(self):
         """
         Clears all annotations. This does not affect the resource location and similar informations.
 
@@ -133,4 +133,10 @@ class DigitalObject(object):
     identifier = property(__get_id, doc="The full identifier of this Digital Object (read-only).")
 
     
+    def add_do_reference(self, semantics, reference):
+        """
+        Adds a Digital Object reference.
+        
+        :param semantics: A string that 
+        """    
 
