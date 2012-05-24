@@ -29,7 +29,7 @@ class DigitalObject(object):
     outside of this particular Python implementation (e.g. in a data archive).
     """
 
-    def __init__(self, do_infrastructure, identifier, annotations = {}, resource_location = None, resource_type = None):
+    def __init__(self, do_infrastructure, identifier, annotations = {}, resource_location = None, resource_type = None, references = {}):
         """
         Constructor. Only called by the factory or other infrastructure methods that construct/reconstruct KeyMD 
         instances.
@@ -42,6 +42,8 @@ class DigitalObject(object):
         :param resource_location: The resource location of the Digital Object's data, in case of external data.
         :param resource_type: The resource type for external data. Note that resource_location and resource_type are not
           checked for consistency by the constructor. It is the caller's task to provide meaningful values.
+        :param references: The references of this instance to other Digital Objects. As with annotations, this is a dict
+          that is assigned directly, not copied.
         """
         if not isinstance(annotations, dict):
             raise TypeError("Invalid type for annotations of a Digital Object: %s; contents: %s" % (type(annotations), repr(annotations)))
@@ -50,6 +52,7 @@ class DigitalObject(object):
         self._resource_location = resource_location
         self._resource_type = resource_type
         self._annotations = annotations
+        self._references = references
         if resource_type and not resource_location:
             raise ValueError("You cannot provide a resource type, but no resource location!")
         
@@ -62,7 +65,7 @@ class DigitalObject(object):
         :param annotations: New annotations to replace the old ones (if any). Must be a dictionary.  
         """
         self._annotations = annotations.copy()
-        self._do_infra._write_all_annotations(self._id, annotations)
+        self._do_infra._write_all_annotations(self._id, self._annotations)
         
     def set_annotation(self, key, value):
         """
@@ -147,52 +150,114 @@ class DigitalObject(object):
           method to formalize semantics.
         :param reference: The referenced entity. Must be either a PID string or (preferably) a Digital Object.
         """
-        raise NotImplementedError()
+        # resolve reference to a native DO
+        if isinstance(reference, DigitalObject):
+            ref = reference.identifier
+        else:
+            if DigitalObject.is_PID(reference):
+                # lookup PID to check for valid object, then use its identifier (which should be equal to reference)
+                ref = self._do_infra.lookup_pid(reference)
+                ref = ref.identifier
+            else:
+                raise ValueError("Invalid reference: %s" % reference)
+        # analyze semantics parameter
+        if isinstance(semantics, DigitalObject):
+            ref_key = semantics.identfier
+        else:
+            ref_key = semantics
+        # now store in list, create a new list if necessary
+        if not ref_key in self._references:
+            self._references[ref_key] = [ref]
+        else:
+            self._references[ref_key].append(ref)
+        # write to do-infra
+        self._do_infra._write_reference(self._id, ref_key, self._references[ref_key])
         
     def remove_do_reference(self, semantics, reference):
         """
         Removes the given reference to the given object.
         
-        :param semantics: Indicates the relationship that should be removed. Can be either a PID or a Digital Object 
-          instance. Can also be an arbitrary String in case of user-only semantics.
+        :param semantics: Indicates the relationship that should be removed. Can be either an arbitrary string or a 
+          Digital Object instance. It is not safe to use a PID string here, although it might work occasionally.
         :param reference: The referenced object whose relationship should be removed. Can be a Digital Object or a PID.
         :raises: :exc:`KeyError` if a given identifier could not be resolved
         :returns: True on success, False if the specified reference did not exist
         """
-        raise NotImplementedError()
+        # resolve reference to a native DO
+        if isinstance(reference, DigitalObject):
+            ref = reference.identifier
+        else:
+            if DigitalObject.is_PID(reference):
+                # lookup PID to check for valid object, then use its identifier (which should be equal to reference)
+                ref = self._do_infra.lookup_pid(reference)
+                ref = ref.identifier
+            else:
+                raise ValueError("Invalid reference: %s" % reference)
+        # analyze semantics parameter
+        if isinstance(semantics, DigitalObject):
+            ref_key = semantics.identfier
+        else:
+            ref_key = semantics
+        # now remove from list
+        if ref_key in self._references:
+            self._references[ref_key].remove(ref)
+            self._do_infra._write_reference(self._id, ref_key, self._references[ref_key])
+            return True
+        else:
+            return False
+        
 
     def remove_do_references(self, semantics):
         """
         Removes all references of given semantics to any object.
         
-        :param semantics: Indicates the relationship that should be removed. Can be either a PID or a Digital Object
-          instance. Can also be an arbitrary String in case of user-only semantics.
+        :param semantics: Indicates the relationship that should be removed. Can be either an arbitrary string or a 
+          Digital Object instance. It is not safe to use a PID string here, although it might work occasionally.
         :raises: :exc:`KeyError` if semantics was a syntactically valid PID that however was unresolvable.
         :returns: True if references of given semantics existed and all of them were removed, False if no references with given semantics 
         existed
         """
-        raise NotImplementedError()
+        # analyze semantics parameter
+        if isinstance(semantics, DigitalObject):
+            ref_key = semantics.identfier
+        else:
+            ref_key = semantics
+        # now remove whole list
+        if ref_key in self._references:
+            del self._references[ref_key]
+            self._do_infra._write_references(self._id, ref_key, None)
+            return True
+        else:
+            return False
         
     def get_references(self, semantics):
         """
         Retrieves all referenced objects where the relationship type is the given semantics.
         
-        :param semantics: Indicates the relationship that is to be resolved.
+        :param semantics: Indicates the relationship that is to be resolved. Can either be an arbitrary string or a
+          Digital Object instance. It is not safe to use a PID string here, although it might work occasionally.
         :raises: :exc:`KeyError` if semantics was a syntactically valid PID that however was unresolvable.
         :returns: A list of Digital Objects that matches the given relationship. The list will be empty if no such 
         relationships exist.
-        """ 
-        raise NotImplementedError()
+        """
+        # analyze semantics parameter
+        if isinstance(semantics, DigitalObject):
+            ref_key = semantics.identfier
+        else:
+            ref_key = semantics
+        # early exit if no such reference exists
+        if not ref_key in self._references:
+            return []
+        # otherwise, retrieve all referenced DOs
+        refs = self._references[ref_key]
+        res = []
+        for r in refs:
+            # assume r is a string PID
+            dobj = self._do_infra.lookup_pid(r)
+            res.append(dobj)
+        return res            
+         
 
-    def clear_references(self, semantics=None):
-        """
-        Clears all references or all references that match the given semantics.
-        
-        :param semantics: If not None, only references will be removed that have the given relationship.
-        :raises: :exc:`KeyError` if semantics was a syntactically valid PID that however was unresolvable.
-        """
-        raise NotImplementedError()
-        
     @staticmethod
     def is_PID(s):
         """
