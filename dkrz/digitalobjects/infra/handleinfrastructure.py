@@ -182,7 +182,7 @@ class HandleInfrastructure(DOInfrastructure):
         handle_values = [{"index": INDEX_RESOURCE_TYPE, "type": TYPE_RESOURCE_TYPE, "data": res_type},
                            {"index": INDEX_RESOURCE_LOCATION, "type": "", "data": resource_location}]
         current_index = FREE_INDEX_START
-        for k, v in annotations.iter_items():
+        for k, v in annotations.iteritems():
             handle_values.append({"index": current_index, "type": k, "data": v})
             current_index += 1
         # now store new Handle values, replacing ALL old ones
