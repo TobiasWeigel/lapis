@@ -29,7 +29,7 @@ class DigitalObject(object):
     outside of this particular Python implementation (e.g. in a data archive).
     """
 
-    def __init__(self, do_infrastructure, identifier, annotations = {}, resource_location = None, resource_type = None, references = {}):
+    def __init__(self, do_infrastructure, identifier, annotations = None, resource_location = None, resource_type = None, references = None):
         """
         Constructor. Only called by the factory or other infrastructure methods that construct/reconstruct KeyMD 
         instances.
@@ -45,14 +45,20 @@ class DigitalObject(object):
         :param references: The references of this instance to other Digital Objects. As with annotations, this is a dict
           that is assigned directly, not copied.
         """
-        if not isinstance(annotations, dict):
+        if annotations and (not isinstance(annotations, dict)):
             raise TypeError("Invalid type for annotations of a Digital Object: %s; contents: %s" % (type(annotations), repr(annotations)))
         self._id = identifier
         self._do_infra = do_infrastructure
         self._resource_location = resource_location
         self._resource_type = resource_type
-        self._annotations = annotations
-        self._references = references
+        if annotations:
+            self._annotations = annotations
+        else:
+            self._annotations = {}
+        if references:
+            self._references = references
+        else:
+            self._references = {}
         if resource_type and not resource_location:
             raise ValueError("You cannot provide a resource type, but no resource location!")
         
