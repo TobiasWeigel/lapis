@@ -83,22 +83,22 @@ class HandleInfrastructure(DOInfrastructure):
     
     def _acquire_pid(self, identifier):
         http = HTTPConnection(self.host, self.port)
-        path, identifier = self._prepare_identifier(identifier)
+        path, identifier_prep = self._prepare_identifier(identifier)
         # check for existing Handle
         http.request("GET", path, None)
         resp = http.getresponse()
         if (resp.status == 200):
             # Handle already exists
-            raise PIDAlreadyExistsError("Handle already exists: %s" % identifier)
+            raise PIDAlreadyExistsError("Handle already exists: %s" % identifier_prep)
         if (resp.status != 404):
-            raise IOError("Failed to check for existing Handle %s (HTTP Code %s): %s" % (identifier, resp.status, resp.reason))
+            raise IOError("Failed to check for existing Handle %s (HTTP Code %s): %s" % (identifier_prep, resp.status, resp.reason))
         # Handle does not exist, so we can safely create it
         http = HTTPConnection(self.host, self.port)
         http.request("PUT", path, "[]", DEFAULT_JSON_HEADERS)
         resp = http.getresponse()
         if not(200 <= resp.status <= 299):
-            raise IOError("Could not create Handle %s: %s" % (identifier, resp.reason))
-        return identifier
+            raise IOError("Could not create Handle %s: %s" % (identifier_prep, resp.reason))
+        return identifier_prep
     
     def _do_from_json(self, piddata, identifier):
         # piddata is an array of dicts, where each dict has keys: index, type, data
@@ -127,7 +127,7 @@ class HandleInfrastructure(DOInfrastructure):
             # no special circumstances --> assign to annotations or references
             if REFERENCE_INDEX_END >= idx >= REFERENCE_INDEX_START:
                 # reference; first, parse element data using json to a list
-                list_data = json.load(ele["data"])
+                list_data = json.loads(ele["data"])
                 if not isinstance(list_data, list):
                     raise IOError("Illegal format of JSON response from Handle services: Cannot load reference list! Input: %s" % ele["data"])
                 if ele["type"] not in references:
