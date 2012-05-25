@@ -126,10 +126,14 @@ class HandleInfrastructure(DOInfrastructure):
                 continue
             # no special circumstances --> assign to annotations or references
             if REFERENCE_INDEX_END >= idx >= REFERENCE_INDEX_START:
+                # reference; first, parse element data using json to a list
+                list_data = json.load(ele["data"])
+                if not isinstance(list_data, list):
+                    raise IOError("Illegal format of JSON response from Handle services: Cannot load reference list! Input: %s" % ele["data"])
                 if ele["type"] not in references:
-                    references[ele["type"]] = [ele["data"]]
+                    references[ele["type"]] = list_data
                 else:
-                    references[ele["type"]].append(ele["data"])
+                    references[ele["type"]].extend(list_data)
                 continue
             annotations[ele["type"]] = ele["data"]
         return DigitalObject(self, identifier, annotations, res_loc, res_type, references)
@@ -162,20 +166,27 @@ class HandleInfrastructure(DOInfrastructure):
         """
         matching_values = []
         free_index = index_start
+        taken_indices = []        
         for ele in handledata:
+            idx = int(ele["index"])
+            if (index_end and (index_start <= idx <= index_end))\
+            or (not index_end and (index_start <= idx)):
+                taken_indices.append(idx)
             if ele["type"] == key:
                 matching_values.append(ele)
-            if int(ele["index"]) >= free_index:
-                free_index = int(ele["index"])+1
-                if index_end and (free_index > index_end):
-                    raise IndexError("No free index available!")
         if len(matching_values) > 1:
             raise IllegalHandleStructureError("Handle %s contains more than one entry of type %s!" % (identifier, key))
         elif len(matching_values) == 1:
-            return matching_values[0]["index"]
+            return int(matching_values[0]["index"])
         else:
             # key not present in Handle; must assign a new index
-            return free_index
+            # check for free index within bounds
+            if taken_indices == []:
+                return index_start
+            m = min(taken_indices)
+            if m == index_end:
+                raise IllegalHandleStructureError("Handle %s does not have any more available index slots between %s and %s!" % (index_start, index_end))
+            return m
         
         
     def _write_annotation(self, identifier, key, value):
@@ -258,9 +269,10 @@ class HandleInfrastructure(DOInfrastructure):
         dodata = json.load(resp)
         index = self._determine_index(identifier, dodata, key, REFERENCE_INDEX_START, REFERENCE_INDEX_END)
         # now we can write the reference; note that reference may be a list. But this is okay, we
-        # take care of lists in the JSON-to-DO method
+        # convert it to a string and take care of reconversion in the JSON-to-DO method
         http = HTTPConnection(self.host, self.port)
-        data = json.dumps([{"index": index, "type": key, "data": reference}])
+        reference_s = json.dumps(reference)
+        data = json.dumps([{"index": index, "type": key, "data": reference_s}])
         http.request("POST", path, data, DEFAULT_JSON_HEADERS)
         resp = http.getresponse()
         if not(200 <= resp.status <= 299):
