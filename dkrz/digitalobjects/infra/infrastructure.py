@@ -55,7 +55,7 @@ class DOInfrastructure(object):
                 except:
                     raise # escalate
         else:
-            self._acquire_pid(id)
+            id = self._acquire_pid(id)
         # we have an id, now we can create the DO object
         pid = DigitalObject(self, id)
         return pid
