@@ -272,7 +272,7 @@ class DigitalObject(object):
         """
         Checks whether the given string looks like a syntactically valid PID.
         
-        Syntactically valid PIDs are described as:
+        Syntactically valid PIDs are described as::
         
             PID := Prefix, '/', Suffix;
             Suffix := { ? any character ? }
