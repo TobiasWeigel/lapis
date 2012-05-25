@@ -186,7 +186,6 @@ class DigitalObject(object):
         :param semantics: Indicates the relationship that should be removed. Can be either an arbitrary string or a 
           Digital Object instance. It is not safe to use a PID string here, although it might work occasionally.
         :param reference: The referenced object whose relationship should be removed. Can be a Digital Object or a PID.
-        :raises: :exc:`KeyError` if a given identifier could not be resolved
         :returns: True on success, False if the specified reference did not exist
         """
         # resolve reference to a native DO
@@ -219,7 +218,6 @@ class DigitalObject(object):
         
         :param semantics: Indicates the relationship that should be removed. Can be either an arbitrary string or a 
           Digital Object instance. It is not safe to use a PID string here, although it might work occasionally.
-        :raises: :exc:`KeyError` if semantics was a syntactically valid PID that however was unresolvable.
         :returns: True if references of given semantics existed and all of them were removed, False if no references with given semantics 
         existed
         """
@@ -242,7 +240,6 @@ class DigitalObject(object):
         
         :param semantics: Indicates the relationship that is to be resolved. Can either be an arbitrary string or a
           Digital Object instance. It is not safe to use a PID string here, although it might work occasionally.
-        :raises: :exc:`KeyError` if semantics was a syntactically valid PID that however was unresolvable.
         :returns: A list of Digital Objects that matches the given relationship. The list will be empty if no such 
         relationships exist.
         """
