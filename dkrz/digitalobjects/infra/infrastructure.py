@@ -207,6 +207,7 @@ class InMemoryInfrastructure(DOInfrastructure):
         if identifier in self._storage:
             raise PIDAlreadyExistsError()
         self._storage[identifier] = InMemoryInfrastructure.InMemoryElement() # empty object to reserve key
+        return identifier
         
     def lookup_pid(self, identifier):
         ele = self._storage.get(identifier)
