@@ -219,7 +219,7 @@ class DigitalObject(object):
         :param semantics: Indicates the relationship that should be removed. Can be either an arbitrary string or a 
           Digital Object instance. It is not safe to use a PID string here, although it might work occasionally.
         :returns: True if references of given semantics existed and all of them were removed, False if no references with given semantics 
-        existed
+          existed
         """
         # analyze semantics parameter
         if isinstance(semantics, DigitalObject):
@@ -241,7 +241,7 @@ class DigitalObject(object):
         :param semantics: Indicates the relationship that is to be resolved. Can either be an arbitrary string or a
           Digital Object instance. It is not safe to use a PID string here, although it might work occasionally.
         :returns: A list of Digital Objects that matches the given relationship. The list will be empty if no such 
-        relationships exist.
+          relationships exist.
         """
         # analyze semantics parameter
         if isinstance(semantics, DigitalObject):
