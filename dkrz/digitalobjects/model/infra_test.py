@@ -9,9 +9,16 @@ from dkrz.digitalobjects.infra.infrastructure import InMemoryInfrastructure, PID
 from random import Random
 
 import logging
+import os
 from dkrz.digitalobjects.infra.handleinfrastructure import HandleInfrastructure
 
 from dkrz.digitalobjects.model.do import DigitalObject
+
+from ConfigParser import ConfigParser
+
+TESTING_CONFIG_DEFAULTS = {"handle-prefix": "10876", "server-address": "localhost", "server-port": 8001, "additional-identifier-element": "infra-test/"}
+
+logger = logging.getLogger(__name__)
 
 class TestDOInfrastructure(unittest.TestCase):
     
@@ -115,7 +122,26 @@ class TestHandleInfrastructure(TestDOInfrastructure):
     
     def setUp(self):
         TestDOInfrastructure.setUp(self)
-        self.do_infra = HandleInfrastructure("localhost", 8001, "/handle/", prefix="10876", additional_identifier_element="infra-test/")
+        # test parameters
+        host = "localhost"
+        port = 8080
+        urlpath = "/handle/"
+        prefix = "10876"
+        additional_identifier_element = "infra-test/"
+        # check for test config file
+        cfgparse = ConfigParser()
+        if cfgparse.read(("testing-config.cfg", os.environ["HOME"]+"/testing-config.cfg")):
+            logger.info("Reading testing config file...")
+            if cfgparse.has_option("server", "host"): host = cfgparse.get("server", "host")
+            if cfgparse.has_option("server", "port"): port = cfgparse.getint("server", "port")
+            if cfgparse.has_option("server", "path"): urlpath = cfgparse.get("server", "path")
+            if cfgparse.has_option("handle", "prefix"): prefix = cfgparse.get("handle", "prefix")
+            if cfgparse.has_option("handle", "additionalelement"): additional_identifier_element = cfgparse.get("handle", "additionalelement")
+        # now create infra instance
+        logger.info("Running tests with following parameters:")
+        logger.info("Host: %s, Port: %s, URL path: %s, prefix: %s, additional element: %s" % (host, port, urlpath, prefix, additional_identifier_element))
+        self.do_infra = HandleInfrastructure(host, port, urlpath, prefix=prefix, additional_identifier_element=additional_identifier_element)
+        
         
     def tearDown(self):
         for dobj in self.created_pids:
