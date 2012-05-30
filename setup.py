@@ -6,7 +6,9 @@ version = '0.1'
 requires = []
 
 # check python version for conditional dependencies
-if sys.version_info < (2, 6):
+if sys.version_info < (2, 5):
+    requires += ["simplejson==2.0.7"]
+elif sys.version_info < (2, 6):
     requires += ["simplejson"]
 
 setup(name='dkrz.digitalobjects',
