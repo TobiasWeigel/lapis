@@ -5,8 +5,12 @@ Created on 03.05.2012
 '''
 from dkrz.digitalobjects.infra.infrastructure import DOInfrastructure, PIDAlreadyExistsError
 from httplib import HTTPConnection
-import json
 from dkrz.digitalobjects.model.do import DigitalObject
+
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 INDEX_RESOURCE_LOCATION = 1
 INDEX_RESOURCE_TYPE = 2

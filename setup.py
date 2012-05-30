@@ -3,6 +3,12 @@ import sys, os
 
 version = '0.1'
 
+requires = []
+
+# check python version for conditional dependencies
+if sys.version_info < (2, 6):
+    requires += ["simplejson"]
+
 setup(name='dkrz.digitalobjects',
       version=version,
       description="Digital Object Infrastructure",
@@ -17,9 +23,7 @@ setup(name='dkrz.digitalobjects',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       include_package_data=True,
       zip_safe=False,
-      install_requires=[
-          # -*- Extra requirements: -*-
-      ],
+      install_requires=requires,
       entry_points="""
       # -*- Entry points: -*-
       """,
