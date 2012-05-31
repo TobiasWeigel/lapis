@@ -7,10 +7,13 @@ from dkrz.digitalobjects.model.do import DigitalObject
 
 class DigitalObjectSet(DigitalObject):
     '''
-    A set (unsorted collection) of PIDs (or further sub-PID-sets).
+    A set (unsorted collection) of Digital Objects (or further sub-DO-sets).
     
     The set does not impose specific semantics. It may be used both for arbitrary collections of largely
     unrelated objects as well as hierarchical structures of data objects that are strongly connected.
+    
+    This is what Kahn and Wilensky informally refer to as a meta-object - a digital object whose data is of type 
+    "set-of-handles".
     '''
 
     def __init__(self):
