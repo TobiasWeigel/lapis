@@ -29,7 +29,7 @@ class DigitalObject(object):
     outside of this particular Python implementation (e.g. in a data archive).
     """
 
-    def __init__(self, do_infrastructure, identifier, annotations = None, resource_location = None, resource_type = None, references = None):
+    def __init__(self, do_infrastructure, identifier, annotations = None, resource_location = None, resource_type = None, references = None, alias_identifiers = None):
         """
         Constructor. Only called by the factory or other infrastructure methods that construct/reconstruct KeyMD 
         instances.
@@ -44,6 +44,9 @@ class DigitalObject(object):
           checked for consistency by the constructor. It is the caller's task to provide meaningful values.
         :param references: The references of this instance to other Digital Objects. As with annotations, this is a dict
           that is assigned directly, not copied.
+        :param alias_identifiers: The alias PIDs that lead to this Digital Object. Only available if the DO was resolved through 
+          an alias PID. This should be a list of identifier strings. The process which lead to the DO started at the 
+          first list entry. The list will be assigned directly, not copied.
         """
         if annotations and (not isinstance(annotations, dict)):
             raise TypeError("Invalid type for annotations of a Digital Object: %s; contents: %s" % (type(annotations), repr(annotations)))
@@ -61,6 +64,10 @@ class DigitalObject(object):
             self._references = {}
         if resource_type and not resource_location:
             raise ValueError("You cannot provide a resource type, but no resource location!")
+        if alias_identifiers:
+            self._alias_identifiers = alias_identifiers
+        else:
+            self._alias_identifiers = []
         
     def set_annotations(self, annotations):
         """
@@ -286,3 +293,15 @@ class DigitalObject(object):
             return True
         else:
             return False 
+        
+    def get_alias_identifiers(self):
+        """
+        Returns a list of alias identifier strings that this Digital Object was resolved through. 
+        
+        Note that this does in no way contain all alias identifiers that lead to this object.
+        
+        If the list has more than one entry, the elements have to be seen as pointers from one to the next.
+        
+        :returns: A list (may be empty).
+        """
+        return list(self._alias_identifiers)
