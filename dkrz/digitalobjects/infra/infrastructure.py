@@ -146,6 +146,34 @@ class DOInfrastructure(object):
         """
         raise NotImplementedError()
     
+    def create_alias(self, original, alias_identifier):
+        """
+        Creates one or more alias PIDs for the given Digital Object or alias identifier.
+        
+        :param original: The Digital Object that should be pointed to or a PID string, which may reference an original
+          DO or can be an alias PID itself.
+        :alias_identifiers: An identifier string for the alias.
+        :returns: The identifier string of the created alias. The returned identifier may differ slightly from the given
+          one, depending on the actual infrastructure implementation.
+        :raises: :exc:`.PIDAlreadyExistsError` if any of the given identifier is already occupied. No alias will have
+          been created.
+        """
+        raise NotImplementedError()
+    
+    def delete_alias(self, alias_identifier):
+        """
+        Deletes the given alias PID.
+        
+        If the given identifier does not exist, the method will raise a :exc:`KeyError`. If it resolves to an original 
+        Digital Object, the method will return False.
+        
+        :param alias_identifier: Identifier string to remove.
+        :returns: True if the identifier was successfully removed, False if the identifier existed, but pointed to an
+          original Digital Object.
+        :raises: :exc:`KeyError` if no alias exists with the given identifier.
+        """
+        raise NotImplementedError()
+    
     
 class InMemoryInfrastructure(DOInfrastructure):
     """
@@ -166,6 +194,7 @@ class InMemoryInfrastructure(DOInfrastructure):
             self._resource_location = None
             self._resource_type = None
             self._references = {}
+            self._identifier = None
         
         def read_from_do(self, do):
             """
@@ -181,12 +210,30 @@ class InMemoryInfrastructure(DOInfrastructure):
             for k in do.iter_reference_keys():
                 self._references[k] = do.get_references(k)
             
-        def build_do_instance(self, do_infra, identifier):
+        def build_do_instance(self, do_infra, identifier, aliases=None):
             """
             Generates a PID instance from the information stored in this memory element object.
             """
-            dobj = DigitalObject(do_infra, identifier, self._annotations, self._resource_location, self._resource_type, self._references)
+            dobj = DigitalObject(do_infra, identifier, self._annotations, self._resource_location, self._resource_type, self._references, aliases)
             return dobj
+        
+    class InMemoryElementAlias(object):
+        """
+        Helper class that simply points to another InMemoryElement instance.
+        """
+        
+        def __init__(self, original_id):
+            if not original_id:
+                raise ValueError()
+            self._original_id = original_id
+            
+        def build_do_instance(self, do_infra, identifier, aliases=None):
+            if aliases:
+                al = aliases+[identifier]
+            else:
+                al = [identifier]
+            return do_infra._storage.get(self._original_id).build_do_instance(do_infra, identifier, aliases=al)
+            
     
     def __init__(self):
         super(InMemoryInfrastructure, self).__init__()
@@ -198,10 +245,13 @@ class InMemoryInfrastructure(DOInfrastructure):
         dobj = DOInfrastructure.create_do(self, identifier, do_class)
         # store new InMemoryElement in storage
         self._storage[dobj.identifier].read_from_do(dobj)
+        self._storage[dobj.identifier]._identifier = dobj.identifier
         return dobj
     
     def delete_do(self, identifier):
-        del self._storage[identifier]
+        # aliases!
+        ele = self._storage_resolve(identifier)
+        del self._storage[ele._identifier]
         
     def _acquire_pid(self, identifier):
         if identifier in self._storage:
@@ -210,41 +260,76 @@ class InMemoryInfrastructure(DOInfrastructure):
         return identifier
         
     def lookup_pid(self, identifier):
-        ele = self._storage.get(identifier)
+        ele = self._storage[identifier]
         if not ele:
             return None
         return ele.build_do_instance(self, identifier)
     
-    def _write_annotation(self, identifier, key, value):
+    def _storage_resolve(self, identifier):
+        """
+        Resolves the given identifier in the internal storage. Will follow aliases.
+        """
         ele = self._storage.get(identifier)
+        if not ele:
+            return None
+        if isinstance(ele, InMemoryInfrastructure.InMemoryElementAlias):
+            return self._storage_resolve(ele._original_id)
+        return ele
+    
+    def _write_annotation(self, identifier, key, value):
+        ele = self._storage_resolve(identifier)
         if not ele:
             raise KeyError
         ele._annotations[key] = value
 
     def _write_annotations(self, identifier, annotations):
-        ele = self._storage.get(identifier)
+        ele = self._storage_resolve(identifier)
         if not ele:
             raise KeyError
         ele._annotations.update(annotations)
         
     def _write_resource_location(self, identifier, resource_location, resource_type=None):
-        ele = self._storage.get(identifier)
+        ele = self._storage_resolve(identifier)
         if not ele:
             raise KeyError
         ele._resource_location = resource_location
         ele._resource_type = resource_type
 
     def _write_all_annotations(self, identifier, annotations):
-        ele = self._storage.get(identifier)
+        ele = self._storage_resolve(identifier)
         if not ele:
             raise KeyError
         ele._annotations = annotations
         
     def _write_reference(self, identifier, key, reference):
-        ele = self._storage.get(identifier)
+        ele = self._storage_resolve(identifier)
         if not ele:
             raise KeyError
         ele._references[key] = reference
+        
+    def create_alias(self, original, alias_identifier):
+        # check for existing PID
+        ele = self._storage.get(alias_identifier)
+        if ele:
+            raise PIDAlreadyExistsError()
+        # create alias
+        if isinstance(original, DigitalObject):
+            orig_id = original.identifier
+        else:
+            orig_id = original
+        alele = InMemoryInfrastructure.InMemoryElementAlias(self, orig_id) 
+        self._storage[alias_identifier] = alele
+        return [alias_identifier]
+        
+    def delete_alias(self, alias_identifier):
+        ele = self._storage.get(alias_identifier)
+        if not ele:
+            raise KeyError()
+        if isinstance(ele, InMemoryInfrastructure.InMemoryElement):
+            return False        
+        del self._storage[alias_identifier]
+        return True
+            
     
 class PIDAlreadyExistsError(Exception):
     """
