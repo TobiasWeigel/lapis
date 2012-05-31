@@ -14,6 +14,9 @@ class DigitalObjectSet(DigitalObject):
     
     This is what Kahn and Wilensky informally refer to as a meta-object - a digital object whose data is of type 
     "set-of-handles".
+
+    Internally, the set is maintained through DO references. The underlying infrastructure may serialize this structure
+    in a different form.
     '''
 
     def __init__(self):
