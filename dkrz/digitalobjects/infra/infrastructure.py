@@ -260,7 +260,7 @@ class InMemoryInfrastructure(DOInfrastructure):
         return identifier
         
     def lookup_pid(self, identifier):
-        ele = self._storage[identifier]
+        ele = self._storage.get(identifier)
         if not ele:
             return None
         return ele.build_do_instance(self, identifier)
