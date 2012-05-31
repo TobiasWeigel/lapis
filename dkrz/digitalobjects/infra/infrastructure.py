@@ -317,7 +317,7 @@ class InMemoryInfrastructure(DOInfrastructure):
             orig_id = original.identifier
         else:
             orig_id = original
-        alele = InMemoryInfrastructure.InMemoryElementAlias(self, orig_id) 
+        alele = InMemoryInfrastructure.InMemoryElementAlias(orig_id) 
         self._storage[alias_identifier] = alele
         return [alias_identifier]
         
