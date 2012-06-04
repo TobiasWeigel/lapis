@@ -232,7 +232,7 @@ class InMemoryInfrastructure(DOInfrastructure):
                 al = aliases+[identifier]
             else:
                 al = [identifier]
-            return do_infra._storage.get(self._original_id).build_do_instance(do_infra, identifier, aliases=al)
+            return do_infra._storage.get(self._original_id).build_do_instance(do_infra, self._original_id, aliases=al)
             
     
     def __init__(self):
