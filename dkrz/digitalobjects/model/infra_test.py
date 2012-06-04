@@ -4,7 +4,7 @@ Created on 03.05.2012
 :author: tobiasweigel
 '''
 import unittest
-from dkrz.digitalobjects.infra.infrastructure import InMemoryInfrastructure, PIDAlreadyExistsError
+from dkrz.digitalobjects.infra.infrastructure import InMemoryInfrastructure, PIDAlreadyExistsError, PIDAliasBrokenError
 
 from random import Random
 
@@ -155,7 +155,12 @@ class TestDOInfrastructure(unittest.TestCase):
         assert self.do_infra.delete_alias(id_alias1) == True
         assert self.do_infra.lookup_pid(id_alias1) == None
         
-        # TODO: self.do_infra.lookup_pid(id_alias2) -> broken chain, what then??
+        # self.do_infra.lookup_pid(id_alias2) -> broken chain, check for exception
+        try:
+            self.do_infra.lookup_pid(id_alias2)
+            self.fail("Could resolve broken alias chain without Exception being thrown!")
+        except PIDAliasBrokenError:
+            pass
         
 
 class TestHandleInfrastructure(TestDOInfrastructure):
