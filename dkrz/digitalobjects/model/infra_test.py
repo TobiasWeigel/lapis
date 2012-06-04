@@ -116,7 +116,47 @@ class TestDOInfrastructure(unittest.TestCase):
             self.created_pids.append(dobj.identifier)
             assert dobj != None
             self.logger.info(dobj.identifier)
-            
+    
+    def test_aliases(self):
+        resloc = "http://www.example.com/alias_original"
+        id_orig = self.prefix+"alias_original"
+        id_alias1 = self.prefix+"alias1"
+        id_alias2 = self.prefix+"alias2"
+        dobj1 = self.do_infra.create_do(id_orig)
+        self.created_pids.append(id_orig)
+        assert dobj1 != None
+        dobj1.resource_location = resloc
+        assert dobj1.resource_location == resloc
+        assert dobj1.get_alias_identifiers() == []
+        # alias 1 -> orig
+        al1 = self.do_infra.create_alias(dobj1, id_alias1)
+        self.created_pids.append(id_alias1)
+        assert al1 != None
+        # alias 2 -> alias 1 -> orig
+        al2 = self.do_infra.create_alias(id_alias1, id_alias2)
+        self.created_pids.append(id_alias2)
+        assert al2 != None
+        # check aliases
+        dobj = self.do_infra.lookup_pid(id_alias2)
+        assert dobj != None
+        assert dobj.identifier == id_orig
+        assert dobj.resource_location == resloc
+        assert dobj.get_alias_identifiers() == [id_alias2, id_alias1]
+        dobj = self.do_infra.lookup_pid(id_alias1)
+        assert dobj != None
+        assert dobj.identifier == id_orig
+        assert dobj.resource_location == resloc
+        assert dobj.get_alias_identifiers() == [id_alias1]
+        # look up directly, check if no aliases noted
+        dobj = self.do_infra.lookup_pid(id_orig)
+        assert dobj.get_alias_identifiers() == []
+        
+        # delete alias
+        assert self.do_infra.delete_alias(id_alias1) == True
+        assert self.do_infra.lookup_pid(id_alias1) == None
+        
+        # TODO: self.do_infra.lookup_pid(id_alias2) -> broken chain, what then??
+        
 
 class TestHandleInfrastructure(TestDOInfrastructure):
     
