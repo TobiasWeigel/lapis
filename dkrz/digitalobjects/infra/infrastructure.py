@@ -90,6 +90,8 @@ class DOInfrastructure(object):
         
         :param identifier: the full identifier string to resolve.
         :return: a :py:class:`.DigitalObject` or None if the identifier is still unassigned.
+        :raises: :exc:`.PIDAliasBrokenError` if the given identifier is an alias, but the target object does not exist
+          (has been deleted). Also thrown if a chain of multiple aliases fails to resolve. 
         """
         raise NotImplementedError()
     
@@ -232,7 +234,10 @@ class InMemoryInfrastructure(DOInfrastructure):
                 al = aliases+[identifier]
             else:
                 al = [identifier]
-            return do_infra._storage.get(self._original_id).build_do_instance(do_infra, self._original_id, aliases=al)
+            oele = do_infra._storage.get(self._original_id)
+            if not oele:
+                raise PIDAliasBrokenError("Alias %s has broken target %s!" % (identifier, self._original_id))
+            return oele.build_do_instance(do_infra, self._original_id, aliases=al)
             
     
     def __init__(self):
@@ -334,5 +339,11 @@ class InMemoryInfrastructure(DOInfrastructure):
 class PIDAlreadyExistsError(Exception):
     """
     Exception thrown when trying to acquire an already existing PID. 
+    """
+    pass
+
+class PIDAliasBrokenError(Exception):
+    """
+    Exception thrown when trying to resolve a PID that is an alias whose target object is lost.
     """
     pass
