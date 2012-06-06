@@ -347,7 +347,7 @@ class InMemoryInfrastructure(DOInfrastructure):
     
     def is_alias(self, alias_identifier):
         ele = self._storage.get(alias_identifier)
-        if ele:
+        if not ele:
             raise KeyError()
         return isinstance(ele, InMemoryInfrastructure.InMemoryElementAlias)
             

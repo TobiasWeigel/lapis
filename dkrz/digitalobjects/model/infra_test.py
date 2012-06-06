@@ -133,11 +133,14 @@ class TestDOInfrastructure(unittest.TestCase):
         id_alias1 = self.do_infra.create_alias(dobj1, id_alias1)
         assert id_alias1 != None
         self.created_pids.append(id_alias1)
+        assert self.do_infra.is_alias(id_alias1) == True
         # alias 2 -> alias 1 -> orig
         id_alias2 = self.do_infra.create_alias(id_alias1, id_alias2)
         assert id_alias2 != None
         self.created_pids.append(id_alias2)
+        assert self.do_infra.is_alias(id_alias2) == True
         # check aliases
+        assert self.do_infra.is_alias(id_orig) == False
         dobj = self.do_infra.lookup_pid(id_alias2)
         assert dobj != None
         assert dobj.identifier == id_orig
