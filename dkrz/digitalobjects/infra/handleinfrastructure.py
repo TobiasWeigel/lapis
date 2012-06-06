@@ -6,6 +6,7 @@ Created on 03.05.2012
 from dkrz.digitalobjects.infra.infrastructure import DOInfrastructure, PIDAlreadyExistsError, PIDAliasBrokenError
 from httplib import HTTPConnection
 from dkrz.digitalobjects.model.do import DigitalObject
+from dkrz.digitalobjects.model.doset import DigitalObjectSet
 
 try:
     import json
@@ -150,6 +151,9 @@ class HandleInfrastructure(DOInfrastructure):
                     references[ele["type"]].extend(list_data)
                 continue
             annotations[ele["type"]] = ele["data"]
+        # create special instances for special resource types
+        if res_type == DigitalObjectSet.RESOURCE_TYPE:
+            return DigitalObjectSet(self, identifier, annotations, references=references, alias_identifiers=aliases)
         return DigitalObject(self, identifier, annotations, res_loc, res_type, references, alias_identifiers=aliases)
         
     def lookup_pid(self, identifier):

@@ -6,6 +6,7 @@ Created on 20.04.2012
 from random import Random
 import string
 from dkrz.digitalobjects.model.do import DigitalObject
+from dkrz.digitalobjects.model.doset import DigitalObjectSet
 
 class DOInfrastructure(object):
     """
@@ -58,8 +59,9 @@ class DOInfrastructure(object):
         else:
             id = self._acquire_pid(id)
         # we have an id, now we can create the DO object
-        pid = DigitalObject(self, id)
-        return pid
+        if do_class:
+            return do_class(self, id)            
+        return DigitalObject(self, id)
     
     def _generate_random_identifier(self):
         """
@@ -226,7 +228,10 @@ class InMemoryInfrastructure(DOInfrastructure):
             """
             Generates a PID instance from the information stored in this memory element object.
             """
-            dobj = DigitalObject(do_infra, identifier, self._annotations, self._resource_location, self._resource_type, self._references, aliases)
+            if self._resource_type == DigitalObjectSet.RESOURCE_TYPE:
+                dobj = DigitalObjectSet(do_infra, identifier, annotations=self._annotations, references=self._references, alias_identifiers=aliases)
+            else:
+                dobj = DigitalObject(do_infra, identifier, self._annotations, self._resource_location, self._resource_type, self._references, aliases)
             return dobj
         
     class InMemoryElementAlias(object):
