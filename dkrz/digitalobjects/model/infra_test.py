@@ -15,6 +15,7 @@ from dkrz.digitalobjects.infra.handleinfrastructure import HandleInfrastructure
 from dkrz.digitalobjects.model.do import DigitalObject
 
 from ConfigParser import ConfigParser
+from dkrz.digitalobjects.model.doset import DigitalObjectSet
 
 TESTING_CONFIG_DEFAULTS = {"handle-prefix": "10876", "server-address": "localhost", "server-port": 8001, "additional-identifier-element": "infra-test/"}
 
@@ -166,6 +167,31 @@ class TestDOInfrastructure(unittest.TestCase):
         except PIDAliasBrokenError:
             pass
         
+    def test_sets(self):
+        # create a set
+        id_ele = [self.prefix+"setele1", self.prefix+"setele2", self.prefix+"setele3"]
+        id_set = self.prefix+"set"
+        ele = []
+        for i in range(len(id_ele)):
+            newele = self.do_infra.create_do(id_ele[i])
+            ele.append(newele)
+            id_ele[i] = newele.identifier
+            self.created_pids.append(newele.identifier)
+        ele_set = self.do_infra.create_do(id_set, DigitalObjectSet)
+        assert ele_set != None
+        self.created_pids.append(ele_set.identifier)
+        id_set = ele_set.identifier
+        for e in ele:
+            ele_set.add_do(e)
+        # check if this is a set
+        ele_set = self.do_infra.lookup_pid(id_set)
+        assert isinstance(ele_set, DigitalObjectSet)
+        # check if all subelements are present
+        num_subele = 0
+        for sele in ele_set.iter_set_elements():
+            id_ele.index(sele.identifier)
+            num_subele += 1
+        assert num_subele == 3
 
 class TestHandleInfrastructure(TestDOInfrastructure):
     
