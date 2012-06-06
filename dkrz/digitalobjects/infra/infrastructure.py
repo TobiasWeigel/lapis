@@ -38,7 +38,8 @@ class DOInfrastructure(object):
             default PID class. Not every infrastructure will support different classes of objects.
         :param identifier: The identifier string to use for the new instance. If None, the method will use a random 
             identifier (example: ``o9f9-oimx-7o8v-d0zt``)
-        :return: A new :class:`.DigitalObject` instance
+        :return: A new :class:`.DigitalObject` instance. Note that the identifier of this instance may differ from the
+          given identifier.
         :raises: :exc:`.PIDAlreadyExistsError` if the given identifier already exists. No new PID will be allocated and no DO 
           will be created. 
         """
@@ -150,11 +151,11 @@ class DOInfrastructure(object):
     
     def create_alias(self, original, alias_identifier):
         """
-        Creates one or more alias PIDs for the given Digital Object or alias identifier.
+        Creates an alias PIDs for the given Digital Object or alias identifier.
         
         :param original: The Digital Object that should be pointed to or a PID string, which may reference an original
           DO or can be an alias PID itself.
-        :alias_identifiers: An identifier string for the alias.
+        :alias_identifier: An identifier string for the alias.
         :returns: The identifier string of the created alias. The returned identifier may differ slightly from the given
           one, depending on the actual infrastructure implementation.
         :raises: :exc:`.PIDAlreadyExistsError` if any of the given identifier is already occupied. No alias will have
@@ -324,7 +325,7 @@ class InMemoryInfrastructure(DOInfrastructure):
             orig_id = original
         alele = InMemoryInfrastructure.InMemoryElementAlias(orig_id) 
         self._storage[alias_identifier] = alele
-        return [alias_identifier]
+        return alias_identifier
         
     def delete_alias(self, alias_identifier):
         ele = self._storage.get(alias_identifier)
