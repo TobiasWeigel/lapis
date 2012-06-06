@@ -92,13 +92,15 @@ class DigitalObjectSet(DigitalObject):
                     raise ValueError("The given list contains objects that are no Digital Object instances!")
                 self.remove_do_reference(REFERENCE_SUBELEMENT, x)
                 self._elements.remove(x.identifier)
-                del self._object_cache[x.identifier]
+                if x.identifier in self._object_cache:
+                    del self._object_cache[x.identifier]
         else:
             if not isinstance(dobj, DigitalObject):
                 raise ValueError("The given object is not a Digital Object instance: %s" % dobj)
             self.remove_do_reference(REFERENCE_SUBELEMENT, dobj)
             self._elements.remove(dobj.identifier)
-            del self._object_cache[dobj.identifier]
+            if dobj.identifier in self._object_cache:
+                del self._object_cache[dobj.identifier]
 
     def contains_do(self, dobj):
         """
