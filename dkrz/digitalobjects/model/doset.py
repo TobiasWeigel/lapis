@@ -52,6 +52,8 @@ class DigitalObjectSet(DigitalObject):
         self._elements = set()
         self._object_cache = {}
         self._resource_type = DigitalObjectSet.RESOURCE_TYPE
+        self._resource_location = None
+        self._do_infra._write_resource_information(self._id, self._resource_location, self._resource_type)
         # parse given subelement references, if any
         ref = self._references.get(REFERENCE_SUBELEMENT)
         if ref:

@@ -120,12 +120,16 @@ class DOInfrastructure(object):
         """
         raise NotImplementedError()
     
-    def _write_resource_location(self, identifier, resource_location, resource_type=None):
+    def _write_resource_information(self, identifier, resource_location=None, resource_type=None):
         """
-        Sets the resource location for the Digital Object with given identifier, i.e. sets the data of the Digital 
-        Object to an external resource.
+        Sets the resource location and type for the Digital Object with given identifier, i.e. sets the data of the 
+        Digital Object to an external resource.
         
-        :param resource_location: the resource location (string).
+        Either resource_type or resource_location may be None. If the resource_type is None, the given external resource
+        is of undefined or unknown type. If the resource_location is None, the resource is not an external entity, but
+        a conceptual construct such as e.g. a composite or set of other Digital Objects. 
+        
+        :param resource_location: the resource location (string). May be None for special cases.
         :param resource_type: the type of resource existing at the location. Defaults to None for unspecified resource
           type. 
         """
@@ -308,7 +312,7 @@ class InMemoryInfrastructure(DOInfrastructure):
             raise KeyError
         ele._annotations.update(annotations)
         
-    def _write_resource_location(self, identifier, resource_location, resource_type=None):
+    def _write_resource_information(self, identifier, resource_location=None, resource_type=None):
         ele = self._storage_resolve(identifier)
         if not ele:
             raise KeyError

@@ -268,10 +268,12 @@ class HandleInfrastructure(DOInfrastructure):
         if not(200 <= resp.status <= 299):
             raise IOError("Could not write annotations to Handle %s: %s" % (identifier, resp.reason))
 
-    def _write_resource_location(self, identifier, resource_location, resource_type=None):
+    def _write_resource_information(self, identifier, resource_location, resource_type=None):
         http = HTTPConnection(self.host, self.port)
         path, identifier = self._prepare_identifier(identifier)
-        handle_values = [{"index": INDEX_RESOURCE_LOCATION, "type": "URL", "data": resource_location}]
+        handle_values = []
+        if resource_location:
+            handle_values = [{"index": INDEX_RESOURCE_LOCATION, "type": "URL", "data": resource_location}]
         if resource_type:
             handle_values.append({"index": INDEX_RESOURCE_TYPE, "type": "", "data": resource_type})
         data = json.dumps(handle_values)

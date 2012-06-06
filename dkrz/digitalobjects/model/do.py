@@ -127,7 +127,7 @@ class DigitalObject(object):
             resource.
         """
         self._resource_location = location
-        self._do_infra._write_resource_location(self._id, self._resource_location, self._resource_type)
+        self._do_infra._write_resource_information(self._id, self._resource_location, self._resource_type)
         
     def _get_resource_location(self):
         return self._resource_location
@@ -139,7 +139,7 @@ class DigitalObject(object):
     
     def _set_resource_type(self, resource_type):
         self._resource_type = resource_type
-        self._do_infra._write_resource_location(self._id, self._resource_location, self._resource_type)
+        self._do_infra._write_resource_information(self._id, self._resource_location, self._resource_type)
 
     resource_type = property(_get_resource_type, _set_resource_type, doc="The type of this Digital Object's external data. The type of this Digital Object may also be implicit through its class; then, the resource type should be None.")
 
