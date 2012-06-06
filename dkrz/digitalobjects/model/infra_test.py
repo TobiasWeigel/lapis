@@ -193,6 +193,9 @@ class TestHandleInfrastructure(TestDOInfrastructure):
             try:
                 self.logger.info("Removing test handle: %s" % dobj)
                 self.do_infra.delete_do(dobj)
+            except KeyError, exc:
+                # already removed, ignore
+                pass
             except IOError, exc:
                 self.logger.info("Could not delete test identifier %s" % dobj)
         
