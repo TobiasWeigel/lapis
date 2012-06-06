@@ -259,6 +259,8 @@ class HandleInfrastructure(DOInfrastructure):
         path, identifier = self._prepare_identifier(identifier)
         http.request("DELETE", path)
         resp = http.getresponse()
+        if resp.status == 404:
+            raise KeyError("Handle not found: %s" % identifier)
         if not(200 <= resp.status <= 299):
             raise IOError("Could not delete Handle %s: %s" % (identifier, resp.reason))
 
@@ -282,3 +284,59 @@ class HandleInfrastructure(DOInfrastructure):
         if not(200 <= resp.status <= 299):
             raise IOError("Could not write references to Handle %s: %s" % (identifier, resp.reason))
             
+            
+    def create_alias(self, original, alias_identifier):
+        if isinstance(original, DigitalObject):
+            original_identifier = original.identifier
+        else: 
+            original_identifier = str(original)
+        http = HTTPConnection(self.host, self.port)
+        path, identifier = self._prepare_identifier(alias_identifier)
+        # check for existing Handle
+        http.request("GET", path, None)
+        resp = http.getresponse()
+        if (resp.status == 200):
+            # Handle already exists
+            raise PIDAlreadyExistsError("Handle already exists, cannot use it as an alias: %s" % identifier)
+        if (resp.status != 404):
+            raise IOError("Failed to check for existing Handle %s (HTTP Code %s): %s" % (identifier, resp.status, resp.reason))
+        # okay, alias is available. Now create it.
+        http = HTTPConnection(self.host, self.port)
+        http.request("PUT", path, '[{"index": 1, "type": "HS_ALIAS", "data": "%s" ]' % original_identifier, DEFAULT_JSON_HEADERS)
+        resp = http.getresponse()
+        if not(200 <= resp.status <= 299):
+            raise IOError("Could not create Alias Handle %s: %s" % (identifier, resp.reason))
+        return identifier
+    
+    def delete_alias(self, alias_identifier):
+        # resolve to check if this is really an alias
+        isa = self.is_alias(alias_identifier)
+        if not isa:
+            return False
+        self.delete_do(alias_identifier)
+        return True
+    
+    def is_alias(self, alias_identifier):
+        """
+        Checks if the given identifier is an alias identifier.
+        
+        :returns: True if the identifier exists and is an alias, false if it exists and points to an original object.
+        :raises: :exc:`KeyError` if the given identifier is unacquired.
+        """
+        http = HTTPConnection(self.host, self.port)
+        path, identifier = self._prepare_identifier(alias_identifier)
+        http.request("GET", path, None)
+        resp = http.getresponse()
+        if resp.status == 404:
+            raise KeyError("Handle not found: %s" % identifier)
+        if not(200 <= resp.status <= 299):
+            raise IOError("Failed to lookup Handle %s for alias check: %s" % (identifier, resp.reason))
+        # parse JSON, but do not create a Digital Object instance, as this might cause inefficient subsequent calls
+        piddata = json.load(resp)
+        res = False
+        for ele in piddata:
+            if ele["type"] == "HS_ALIAS":
+                res = True
+                break
+        return res        
+        
