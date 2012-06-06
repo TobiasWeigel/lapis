@@ -5,6 +5,8 @@ Created on 02.05.2012
 '''
 from dkrz.digitalobjects.model.do import DigitalObject
 
+REFERENCE_SUBELEMENT = "subelement"
+
 class DigitalObjectSet(DigitalObject):
     '''
     A set (unsorted collection) of Digital Objects (or further sub-DO-sets).
@@ -18,14 +20,44 @@ class DigitalObjectSet(DigitalObject):
     Internally, the set is maintained through DO references. The underlying infrastructure may serialize this structure
     in a different form.
     '''
+    
+    RESOURCE_TYPE = "DIGITAL_OBJECT_SET"
+    
+    class LazySetIterator(object):
+        """
+        Special iterator that retrieves Digital Objects on access and through the set's object cache.
+        """
+        
+        def __init__(self, doset):
+            self._doset = doset
+            self._set_iter = iter(doset._elements) 
+        
+        def __iter__(self):
+            return self
+        
+        def next(self):
+            n_id = self._set_iter.next()
+            dobj = self._doset._object_cache.get(n_id, None)
+            if not dobj:
+                # retrieve through do_infra
+                dobj = self._doset._do_infra.lookup_pid(n_id)
+                self._doset._object_cache[n_id] = dobj
+            return dobj
 
-    def __init__(self):
+    def __init__(self, do_infrastructure, identifier, annotations = None, references = None, alias_identifiers = None):
         '''
         Constructor
         '''
-        self.elements = set()
-        self._resource_type = None
-        
+        super(DigitalObjectSet, self).__init__(do_infrastructure, identifier, annotations, resource_location=None, resource_type=None, references=references, alias_identifiers=alias_identifiers)
+        self._elements = set()
+        self._object_cache = {}
+        self._resource_type = DigitalObjectSet.RESOURCE_TYPE
+        # parse given subelement references, if any
+        ref = self._references.get(REFERENCE_SUBELEMENT)
+        if ref:
+            for r in ref:
+                self._elements.add(r)
+                
     def add_do(self, dobj):
         """
         Adds one or more Digital Objects to the set.
@@ -36,31 +68,39 @@ class DigitalObjectSet(DigitalObject):
             for x in dobj:
                 if not isinstance(x, DigitalObject):
                     raise ValueError("The given list contains objects that are no Digital Object instances!")
-            self.elements.update(dobj)
+                self._elements.add(x.identifier)
+                self._object_cache[x.identifier] = x
+                self.add_do_reference(REFERENCE_SUBELEMENT, x)
         else:
             if not isinstance(dobj, DigitalObject):
                 raise ValueError("The given object is not a Digital Object instance: %s" % dobj)
-            self.elements.add(dobj)
+            self._elements.add(dobj.identifier)
+            self._object_cache[dobj.identifier] = dobj
+            self.add_do_reference(REFERENCE_SUBELEMENT, dobj)
     
     def remove_do(self, dobj):
         """
-        Removes the given PID object(s) from the set.
+        Removes the given Digital Object(s) from the set.
         
-        :param dobj: Either a PID instance or a list of PID instances.
+        :param dobj: Either a DO instance or a list of DO instances.
         """
         if isinstance(dobj, list):
             for x in dobj:
                 if not isinstance(x, DigitalObject):
                     raise ValueError("The given list contains objects that are no Digital Object instances!")
-            self.elements.difference_update(dobj)
+                self.remove_do_reference(REFERENCE_SUBELEMENT, x)
+                self._elements.remove(x.identifier)
+                del self._object_cache[x.identifier]
         else:
             if not isinstance(dobj, DigitalObject):
                 raise ValueError("The given object is not a Digital Object instance: %s" % dobj)
-            self.elements.remove(dobj)
+            self.remove_do_reference(REFERENCE_SUBELEMENT, dobj)
+            self._elements.remove(dobj.identifier)
+            del self._object_cache[dobj.identifier]
 
     def contains_do(self, dobj):
         """
-        Check if the set contains the given PID(s).
+        Check if the set contains the given Digital Object(s).
         
         :param dobj: A DO instance or a list of DO instances.
         :return: True if all given Digital Objects are contained in this set.
@@ -69,20 +109,23 @@ class DigitalObjectSet(DigitalObject):
             for x in dobj:
                 if not isinstance(x, DigitalObject):
                     raise ValueError("The given list contains objects that are no Digital Object instances!")
-                if not x in self.elements:
+                if not x.identifier in self._elements:
                     return False
             return True
         else:
             if not isinstance(dobj, DigitalObject):
                 raise ValueError("The given object is not a Digital Object instance: %s" % dobj)
-            return dobj in self.elements
+            return dobj.identifier in self._elements
         
-    def iterate(self):
+    def iter_set_elements(self):
         """
-        Iterate over the elements in the Digital Object set.
+        Iterate over the _elements in the Digital Object set.
         
         :return: an iterator object
         """
-        return iter(self.elements)
+        return DigitalObjectSet.LazySetIterator(self)
+    
+    def __iter__(self):
+        return self.iter_set_elements()
     
     
