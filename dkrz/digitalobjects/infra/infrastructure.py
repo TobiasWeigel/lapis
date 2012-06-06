@@ -177,6 +177,15 @@ class DOInfrastructure(object):
         """
         raise NotImplementedError()
     
+    def is_alias(self, alias_identifier):
+        """
+        Checks if the given identifier is an alias identifier.
+        
+        :returns: True if the identifier exists and is an alias, false if it exists and points to an original object.
+        :raises: :exc:`KeyError` if the given identifier is unacquired.
+        """
+        raise NotImplementedError()
+    
     
 class InMemoryInfrastructure(DOInfrastructure):
     """
@@ -335,6 +344,12 @@ class InMemoryInfrastructure(DOInfrastructure):
             return False        
         del self._storage[alias_identifier]
         return True
+    
+    def is_alias(self, alias_identifier):
+        ele = self._storage.get(alias_identifier)
+        if ele:
+            raise KeyError()
+        return isinstance(ele, InMemoryInfrastructure.InMemoryElementAlias)
             
     
 class PIDAlreadyExistsError(Exception):

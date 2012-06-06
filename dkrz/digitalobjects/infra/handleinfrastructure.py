@@ -339,12 +339,6 @@ class HandleInfrastructure(DOInfrastructure):
         return True
     
     def is_alias(self, alias_identifier):
-        """
-        Checks if the given identifier is an alias identifier.
-        
-        :returns: True if the identifier exists and is an alias, false if it exists and points to an original object.
-        :raises: :exc:`KeyError` if the given identifier is unacquired.
-        """
         http = HTTPConnection(self.host, self.port)
         path, identifier = self._prepare_identifier(alias_identifier)
         http.request("GET", path, None)
