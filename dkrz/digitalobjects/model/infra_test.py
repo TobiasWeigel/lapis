@@ -171,6 +171,7 @@ class TestDOInfrastructure(unittest.TestCase):
         # create a set
         id_ele = [self.prefix+"setele1", self.prefix+"setele2", self.prefix+"setele3"]
         id_set = self.prefix+"set"
+        non_ele_id = self.prefix+"some-non-ele"
         ele = []
         for i in range(len(id_ele)):
             newele = self.do_infra.create_do(id_ele[i])
@@ -192,6 +193,37 @@ class TestDOInfrastructure(unittest.TestCase):
             id_ele.index(sele.identifier)
             num_subele += 1
         assert num_subele == 3
+        # now extend and check again
+        ele_set = self.do_infra.lookup_pid(id_set)
+        id_ele += [self.prefix+"setele4"]
+        newele = self.do_infra.create_do(id_ele[3])
+        id_ele[3] = newele.identifier
+        self.created_pids.append(newele.identifier)
+        ele_set.add_do(newele)
+        # check if all subelements are present
+        ele_set = self.do_infra.lookup_pid(id_set)
+        num_subele = 0
+        for sele in ele_set.iter_set_elements():
+            id_ele.index(sele.identifier)
+            num_subele += 1
+        assert num_subele == 4
+        # containment checks
+        non_ele = self.do_infra.create_do(non_ele_id)
+        self.created_pids.append(non_ele.identifier)
+        ele_set = self.do_infra.lookup_pid(id_set)
+        for e in id_ele:
+            assert ele_set.contains_do(self.do_infra.lookup_pid(e))
+        assert ele_set.contains_do(self.do_infra.lookup_pid(non_ele_id)) == False
+        # test 'delete from set'-operation
+        ele_set.remove_do(self.do_infra.lookup_pid(id_ele[0]))
+        num_subele = 0
+        for sele in ele_set.iter_set_elements():
+            id_ele.index(sele.identifier)
+            num_subele += 1
+        assert num_subele == 3
+        
+        
+                
 
 class TestHandleInfrastructure(TestDOInfrastructure):
     
