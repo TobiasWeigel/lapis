@@ -302,7 +302,7 @@ class HandleInfrastructure(DOInfrastructure):
             raise IOError("Failed to check for existing Handle %s (HTTP Code %s): %s" % (identifier, resp.status, resp.reason))
         # okay, alias is available. Now create it.
         http = HTTPConnection(self.host, self.port)
-        http.request("PUT", path, '[{"index": 1, "type": "HS_ALIAS", "data": "%s" ]' % original_identifier, DEFAULT_JSON_HEADERS)
+        http.request("PUT", path, '[{"index": 1, "type": "HS_ALIAS", "data": "%s"}]' % original_identifier, DEFAULT_JSON_HEADERS)
         resp = http.getresponse()
         if not(200 <= resp.status <= 299):
             raise IOError("Could not create Alias Handle %s: %s" % (identifier, resp.reason))
