@@ -123,19 +123,20 @@ class TestDOInfrastructure(unittest.TestCase):
         id_alias1 = self.prefix+"alias1"
         id_alias2 = self.prefix+"alias2"
         dobj1 = self.do_infra.create_do(id_orig)
+        id_orig = dobj1.identifier
         self.created_pids.append(id_orig)
         assert dobj1 != None
         dobj1.resource_location = resloc
         assert dobj1.resource_location == resloc
         assert dobj1.get_alias_identifiers() == []
         # alias 1 -> orig
-        al1 = self.do_infra.create_alias(dobj1, id_alias1)
+        id_alias1 = self.do_infra.create_alias(dobj1, id_alias1)
+        assert id_alias1 != None
         self.created_pids.append(id_alias1)
-        assert al1 != None
         # alias 2 -> alias 1 -> orig
-        al2 = self.do_infra.create_alias(id_alias1, id_alias2)
+        id_alias2 = self.do_infra.create_alias(id_alias1, id_alias2)
+        assert id_alias2 != None
         self.created_pids.append(id_alias2)
-        assert al2 != None
         # check aliases
         dobj = self.do_infra.lookup_pid(id_alias2)
         assert dobj != None
