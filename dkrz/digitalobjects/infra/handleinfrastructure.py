@@ -3,7 +3,7 @@ Created on 03.05.2012
 
 :author: tobiasweigel
 '''
-from dkrz.digitalobjects.infra.infrastructure import DOInfrastructure, PIDAlreadyExistsError
+from dkrz.digitalobjects.infra.infrastructure import DOInfrastructure, PIDAlreadyExistsError, PIDAliasBrokenError
 from httplib import HTTPConnection
 from dkrz.digitalobjects.model.do import DigitalObject
 
@@ -104,7 +104,17 @@ class HandleInfrastructure(DOInfrastructure):
             raise IOError("Could not create Handle %s: %s" % (identifier_prep, resp.reason))
         return identifier_prep
     
-    def _do_from_json(self, piddata, identifier):
+    def _do_from_json(self, piddata, identifier, aliases):
+        """
+        Construct a DO instance from given JSON data.
+        
+        :param piddata: JSON loaded data.
+        :param identifier: Identifier of the DO.
+        :param aliases: A list of aliases that were used to get to this identifier (may be empty). The list must be
+          ordered in the order of alias resolution, i.e. aliases[0] pointed to aliases[1] etc. The last entry pointed 
+          to the actual identifier. 
+        :returns: A fully fledged DigitalObject instance
+        """
         # piddata is an array of dicts, where each dict has keys: index, type, data
         annotations = {}
         references = {}
@@ -140,21 +150,33 @@ class HandleInfrastructure(DOInfrastructure):
                     references[ele["type"]].extend(list_data)
                 continue
             annotations[ele["type"]] = ele["data"]
-        return DigitalObject(self, identifier, annotations, res_loc, res_type, references)
+        return DigitalObject(self, identifier, annotations, res_loc, res_type, references, alias_identifiers=aliases)
         
     def lookup_pid(self, identifier):
-        http = HTTPConnection(self.host, self.port)
-        path, identifier = self._prepare_identifier(identifier)
-        http.request("GET", path, None)
-        resp = http.getresponse()
-        if resp.status == 404:
-            # Handle not found
-            return None
-        elif not(200 <= resp.status <= 299):
-            raise IOError("Failed to look up Handle %s due to the following reason (HTTP Code %s): %s" % (identifier, resp.status, resp.reason))
-        else:
-            dobj = self._do_from_json(json.load(resp), identifier)
-            return dobj            
+        aliases = []
+        while True:
+            http = HTTPConnection(self.host, self.port)
+            path, identifier = self._prepare_identifier(identifier)
+            http.request("GET", path, None)
+            resp = http.getresponse()
+            if resp.status == 404:
+                # Handle not found
+                if len(aliases) > 0:
+                    raise PIDAliasBrokenError("Alias %s does not exist. Already resolved aliases: %s" % (identifier, aliases))
+                return None
+            elif not(200 <= resp.status <= 299):
+                raise IOError("Failed to look up Handle %s due to the following reason (HTTP Code %s): %s" % (identifier, resp.status, resp.reason))
+            else:
+                # check for HS_ALIAS redirect
+                piddata = json.load(resp)
+                isa, alias_id = self._check_json_for_alias(piddata)
+                if isa:
+                    # write down alias identifier and redo lookup with target identifier
+                    aliases.append(identifier)
+                    identifier = alias_id
+                    continue                    
+                dobj = self._do_from_json(piddata, identifier, aliases)
+                return dobj            
         
     def _determine_index(self, identifier, handledata, key, index_start, index_end=None):
         """
@@ -332,11 +354,20 @@ class HandleInfrastructure(DOInfrastructure):
         if not(200 <= resp.status <= 299):
             raise IOError("Failed to lookup Handle %s for alias check: %s" % (identifier, resp.reason))
         # parse JSON, but do not create a Digital Object instance, as this might cause inefficient subsequent calls
-        piddata = json.load(resp)
-        res = False
+        isa, a_id = self._check_json_for_alias(json.load(resp))
+        return isa
+
+    def _check_json_for_alias(self, piddata):
+        """
+        Checks the given JSON data structure for presence of an HS_ALIAS marker.
+        
+        :returns: a tuple (b, id) where b is True or False and if b is True, id is the Handle string of the target
+          Handle.
+        """
+        res = (False, None)
         for ele in piddata:
             if ele["type"] == "HS_ALIAS":
-                res = True
+                res = (True, ele["data"])
                 break
         return res        
-        
+                
