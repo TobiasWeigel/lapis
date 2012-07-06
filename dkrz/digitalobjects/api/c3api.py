@@ -59,20 +59,44 @@ class C3APIConnector(object):
         return (do_md.identifier, do_data.identifier)
         
 
-    def on_data_staged(self, data_pid, logging_text=None):
+    def on_data_staged(self, data_pid, dms_uid, logging_text=None):
         """
-        data_pid: taken from the single ISO xml.
-        logging_text: small textual description (log filke etc.) which will be written into the PID as an annotation.
-          this contains a description of e.g. what data corrections were performed.
+        Event to be called when data has been staged as requested by the DMS.
         
-        data is modified (spatial subs etc.) or corrected (23:59 correction)...
+        :param data_pid: The PID of the data that was staged.
+        :param dms_uid: The UID given by the DMS to the staging request. 
+        :param logging_text: A short textual description (log file etc.) of the data modifications that have ben done 
+          during data staging, e.g. temporal or variable subsetting.
         
-        returns: pid for modified data. 
+        :returns: pid for modified data. 
         """
-        pass
+        new_id = self.subprefix+"dms-"+dms_uid
+        # look up data PID
+        do_old = self.infrastructure.lookup_pid(data_pid)
+        if isinstance(do_old, DigitalObjectSet):
+            # okay, no problem, we'll try to find the subelement that refers to data
+            data_dos = []
+            for ele in do_old.iter_set_elements():
+                if ele.resource_type == "DATA":
+                    data_dos.append(ele)
+            if len(data_dos) == 0:
+                raise Exception("Could not find any data object in the given Digital Object Set!")
+            if len(data_dos) > 1:
+                raise Exception("Found more than one data object in the given Digital Object Set!")
+            do_old = data_dos[0]
+        elif do_old.resource_type != "DATA":
+            raise Exception("Given Digital Object is not typed as referring to a data object!")
+        # create new DO for data; will not receive a resource location yet
+        do_new = self.infrastructure.create_do(self, new_id)
+        # remember the DMS UID by putting it in the DO key metadata record
+        do_new.set_annotation("dms-uid", dms_uid)
+        # also append logging text if available
+        if logging_text:
+            do_new.set_annotation("log", logging_text)        
+        # provenance: refer to old data DO
+        do_new.add_do_reference("derived-from", do_old)
+        return do_new.identifier
     
-    #-------
-        
     def on_new_workflow_published(self, sourcecode_svn_url, portal_url):
         """
         Event handler to call when a completely new workflow module is available.
