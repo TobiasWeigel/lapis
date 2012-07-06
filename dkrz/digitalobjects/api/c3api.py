@@ -40,9 +40,9 @@ class C3APIConnector(object):
         if not metadata_oai_url.startswith("http://"):
             raise ValueError("OAI URL must be a URL beginning with http://!")
         # prepare identifier names and set
-        set_id = self.subprefix+"set-"+data_acronym
-        md_id = self.subprefix+metadata_identifier
-        data_id = self.subprefix_cera+data_acronym
+        set_id = self.infrastructure.prefix+"/"+self.subprefix+"set-"+data_acronym
+        md_id = self.infrastructure.prefix+"/"+self.subprefix+metadata_identifier
+        data_id = self.infrastructure.prefix+"/"+self.subprefix_cera+data_acronym
         doset = self.infrastructure.create_do(set_id, do_class=DigitalObjectSet)
         # metadata DO
         do_md = self.infrastructure.create_do(md_id)
@@ -70,7 +70,7 @@ class C3APIConnector(object):
         
         :returns: pid for modified data. 
         """
-        new_id = self.subprefix+"dms-"+dms_uid
+        new_id = self.infrastructure.prefix+"/"+self.subprefix+"dms-"+dms_uid
         # look up data PID
         do_old = self.infrastructure.lookup_pid(data_pid)
         if isinstance(do_old, DigitalObjectSet):
