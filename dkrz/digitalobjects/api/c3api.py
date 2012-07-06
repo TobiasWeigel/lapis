@@ -43,13 +43,13 @@ class C3APIConnector(object):
         set_id = self.subprefix+"set-"+data_acronym
         md_id = self.subprefix+metadata_identifier
         data_id = self.subprefix_cera+data_acronym
-        doset = self.infrastructure.create_do(self, set_id, do_class=DigitalObjectSet)
+        doset = self.infrastructure.create_do(set_id, do_class=DigitalObjectSet)
         # metadata DO
-        do_md = self.infrastructure.create_do(self, md_id)
+        do_md = self.infrastructure.create_do(md_id)
         do_md.resource_location = metadata_oai_url
         do_md.resource_type = "METADATA"
         # data DO
-        do_data = self.infrastructure.create_do(self, data_id)
+        do_data = self.infrastructure.create_do(data_id)
         do_data.resource_location = self.cera_view_url+data_acronym
         do_data.resource_type = "DATA"
         # compile set
@@ -87,7 +87,7 @@ class C3APIConnector(object):
         elif do_old.resource_type != "DATA":
             raise Exception("Given Digital Object is not typed as referring to a data object!")
         # create new DO for data; will not receive a resource location yet
-        do_new = self.infrastructure.create_do(self, new_id)
+        do_new = self.infrastructure.create_do(new_id)
         # remember the DMS UID by putting it in the DO key metadata record
         do_new.set_annotation("dms-uid", dms_uid)
         # also append logging text if available
