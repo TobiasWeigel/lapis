@@ -6,6 +6,7 @@ Created on 02.05.2012
 from dkrz.digitalobjects.model.do import DigitalObject
 
 REFERENCE_SUBELEMENT = "subelement"
+REFERENCE_SUBELEMENT_OF = "subelement-of"
 
 class DigitalObjectSet(DigitalObject):
     '''
@@ -73,12 +74,14 @@ class DigitalObjectSet(DigitalObject):
                 self._elements.add(x.identifier)
                 self._object_cache[x.identifier] = x
                 self.add_do_reference(REFERENCE_SUBELEMENT, x)
+                x.add_do_reference(REFERENCE_SUBELEMENT_OF, self)
         else:
             if not isinstance(dobj, DigitalObject):
                 raise ValueError("The given object is not a Digital Object instance: %s" % dobj)
             self._elements.add(dobj.identifier)
             self._object_cache[dobj.identifier] = dobj
             self.add_do_reference(REFERENCE_SUBELEMENT, dobj)
+            dobj.add_do_reference(REFERENCE_SUBELEMENT_OF, self)
     
     def remove_do(self, dobj):
         """
@@ -91,6 +94,7 @@ class DigitalObjectSet(DigitalObject):
                 if not isinstance(x, DigitalObject):
                     raise ValueError("The given list contains objects that are no Digital Object instances!")
                 self.remove_do_reference(REFERENCE_SUBELEMENT, x)
+                x.remove_do_reference(REFERENCE_SUBELEMENT_OF, self)
                 self._elements.remove(x.identifier)
                 if x.identifier in self._object_cache:
                     del self._object_cache[x.identifier]
@@ -98,6 +102,7 @@ class DigitalObjectSet(DigitalObject):
             if not isinstance(dobj, DigitalObject):
                 raise ValueError("The given object is not a Digital Object instance: %s" % dobj)
             self.remove_do_reference(REFERENCE_SUBELEMENT, dobj)
+            dobj.remove_do_reference(REFERENCE_SUBELEMENT_OF, self)
             self._elements.remove(dobj.identifier)
             if dobj.identifier in self._object_cache:
                 del self._object_cache[dobj.identifier]
