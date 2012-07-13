@@ -122,7 +122,7 @@ class HandleInfrastructure(DOInfrastructure):
         res_loc = None
         res_type = None
         for ele in piddata:
-            idx = int(ele["index"])
+            idx = int(ele["idx"])
             if idx == INDEX_RESOURCE_LOCATION:
                 res_loc = ele["data"]
                 continue
@@ -198,7 +198,7 @@ class HandleInfrastructure(DOInfrastructure):
         free_index = index_start
         taken_indices = []        
         for ele in handledata:
-            idx = int(ele["index"])
+            idx = int(ele["idx"])
             if (index_end and (index_start <= idx <= index_end))\
             or (not index_end and (index_start <= idx)):
                 taken_indices.append(idx)
@@ -207,7 +207,7 @@ class HandleInfrastructure(DOInfrastructure):
         if len(matching_values) > 1:
             raise IllegalHandleStructureError("Handle %s contains more than one entry of type %s!" % (identifier, key))
         elif len(matching_values) == 1:
-            return int(matching_values[0]["index"])
+            return int(matching_values[0]["idx"])
         else:
             # key not present in Handle; must assign a new index
             # check for free index within bounds
@@ -231,7 +231,7 @@ class HandleInfrastructure(DOInfrastructure):
         index = self._determine_index(identifier, dodata, key, ANNOTATION_INDEX_START)
         # now we can write the annotation
         http = HTTPConnection(self.host, self.port)
-        data = json.dumps([{"index": index, "type": key, "data": value}])
+        data = json.dumps([{"idx": index, "type": key, "data": value}])
         http.request("POST", path, data, DEFAULT_JSON_HEADERS)
         resp = http.getresponse()
         if not(200 <= resp.status <= 299):
@@ -249,16 +249,16 @@ class HandleInfrastructure(DOInfrastructure):
         res_type = None
         resource_location = ""
         for ele in piddata:
-            if ele["index"] == INDEX_RESOURCE_TYPE:
+            if ele["idx"] == INDEX_RESOURCE_TYPE:
                 res_type = ele["data"]
-            elif ele["index"] == INDEX_RESOURCE_LOCATION:
+            elif ele["idx"] == INDEX_RESOURCE_LOCATION:
                 resource_location = ele["data"]
         # convert annotations to Handle values
-        handle_values = [{"index": INDEX_RESOURCE_TYPE, "type": TYPE_RESOURCE_TYPE, "data": res_type},
-                           {"index": INDEX_RESOURCE_LOCATION, "type": "", "data": resource_location}]
+        handle_values = [{"idx": INDEX_RESOURCE_TYPE, "type": TYPE_RESOURCE_TYPE, "data": res_type},
+                           {"idx": INDEX_RESOURCE_LOCATION, "type": "", "data": resource_location}]
         current_index = ANNOTATION_INDEX_START
         for k, v in annotations.iteritems():
-            handle_values.append({"index": current_index, "type": k, "data": v})
+            handle_values.append({"idx": current_index, "type": k, "data": v})
             current_index += 1
         # now store new Handle values, replacing ALL old ones
         http = HTTPConnection(self.host, self.port)
@@ -273,9 +273,9 @@ class HandleInfrastructure(DOInfrastructure):
         path, identifier = self._prepare_identifier(identifier)
         handle_values = []
         if resource_location:
-            handle_values = [{"index": INDEX_RESOURCE_LOCATION, "type": "URL", "data": resource_location}]
+            handle_values = [{"idx": INDEX_RESOURCE_LOCATION, "type": "URL", "data": resource_location}]
         if resource_type:
-            handle_values.append({"index": INDEX_RESOURCE_TYPE, "type": "", "data": resource_type})
+            handle_values.append({"idx": INDEX_RESOURCE_TYPE, "type": "", "data": resource_type})
         data = json.dumps(handle_values)
         http.request("POST", path, data, DEFAULT_JSON_HEADERS)
         resp = http.getresponse()
@@ -306,7 +306,7 @@ class HandleInfrastructure(DOInfrastructure):
         # convert it to a string and take care of reconversion in the JSON-to-DO method
         http = HTTPConnection(self.host, self.port)
         reference_s = json.dumps(reference)
-        data = json.dumps([{"index": index, "type": key, "data": reference_s}])
+        data = json.dumps([{"idx": index, "type": key, "data": reference_s}])
         http.request("POST", path, data, DEFAULT_JSON_HEADERS)
         resp = http.getresponse()
         if not(200 <= resp.status <= 299):
@@ -330,7 +330,7 @@ class HandleInfrastructure(DOInfrastructure):
             raise IOError("Failed to check for existing Handle %s (HTTP Code %s): %s" % (identifier, resp.status, resp.reason))
         # okay, alias is available. Now create it.
         http = HTTPConnection(self.host, self.port)
-        http.request("PUT", path, '[{"index": 1, "type": "HS_ALIAS", "data": "%s"}]' % original_identifier, DEFAULT_JSON_HEADERS)
+        http.request("PUT", path, '[{"idx": 1, "type": "HS_ALIAS", "data": "%s"}]' % original_identifier, DEFAULT_JSON_HEADERS)
         resp = http.getresponse()
         if not(200 <= resp.status <= 299):
             raise IOError("Could not create Alias Handle %s: %s" % (identifier, resp.reason))
