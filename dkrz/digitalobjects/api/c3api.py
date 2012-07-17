@@ -115,7 +115,7 @@ class C3APIConnector(object):
         
         :param old_workflow_pid: PID for the previous version of this workflow.
         :param sourcecode_svn_url: A URL pointing to the workflow source code (explicit SVN path and revision).
-        ;param portal_url: URL to an end-user web page in the portal specific to this workflow.
+        :param portal_url: URL to an end-user web page in the portal specific to this workflow.
         :return: A PID string for this workflow's new version. 
         """
         raise NotImplementedError()

@@ -18,6 +18,7 @@ Contents:
    
    infrastructure
    digitalobject
+   c3api
    
 
 
