@@ -13,16 +13,21 @@ class C3APIConnector(object):
     '''
 
 
-    def __init__(self, infrastructure):
+    def __init__(self, infrastructure, site):
         '''
         Constructor.
         
         :param infrastructure: A Digital Object Infrastructure instance to use.
+        :param site: A string identifying the site this package is called on, e.g. "WDCC", "AWI" and so on.
+          The class will behave differently to accomodate each project partner's differing infrastructures.
         '''
         self.infrastructure = infrastructure
         self.subprefix = "proj-c3-"
         self.subprefix_cera = "wdcc-"
         self.cera_view_url = "http://cera-www.dkrz.de/WDCC/ui/Compact.jsp?acronym="
+        if site not in ["WDCC"]:
+            raise ValueError("Unknown site: %s" % site)
+        self.site = site
         
     def on_metadata_generated(self, metadata_oai_url, metadata_identifier, data_acronym):
         """
