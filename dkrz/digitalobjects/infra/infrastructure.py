@@ -192,6 +192,23 @@ class DOInfrastructure(object):
         """
         raise NotImplementedError()
     
+    def clean_identifier_string(self, s):
+        """
+        Removes special characters from the given string so it can be safely used
+        as part of a PID identifier.
+        
+        :param s: The raw string
+        :returns: A string that contains mostly only letters and numbers.
+        """
+        res = ""
+        allowed = string.ascii_letters+string.digits+"_-+.,;#~!$§()[]{}\\"
+        for c in s:
+            if c in allowed:
+                res += c
+        return res
+    
+    staticmethod(clean_identifier_string)
+    
     
 class InMemoryInfrastructure(DOInfrastructure):
     """
