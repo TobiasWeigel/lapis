@@ -201,7 +201,7 @@ class DOInfrastructure(object):
         :returns: A string that contains mostly only letters and numbers.
         """
         res = ""
-        allowed = string.ascii_letters+string.digits+"_-+.,;#~!$§()[]{}\\"
+        allowed = string.ascii_letters+string.digits+"_-+.,;#~!$()[]{}"
         for c in s:
             if c in allowed:
                 res += c
