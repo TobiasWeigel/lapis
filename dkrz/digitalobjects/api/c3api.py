@@ -122,16 +122,42 @@ class C3APIConnector(object):
         do_new.resource_type = "SOFTWARE"
         return do_new.identifier
         
-    def on_new_workflow_version(self, old_workflow_pid, sourcecode_svn_url, portal_url):
+    def on_new_workflow_version(self, old_workflow_pid, sourcecode_svn_url):
         """
         Event handler to call when a new version of an existing workflow has been published.
+        The PID string used for the new workflow version is generated based on the old one.
         
         :param old_workflow_pid: PID for the previous version of this workflow.
         :param sourcecode_svn_url: A URL pointing to the workflow source code (explicit SVN path and revision).
-        :param portal_url: URL to an end-user web page in the portal specific to this workflow.
         :return: A PID string for this workflow's new version. 
         """
-        raise NotImplementedError()
+        do_old_wf = self.infrastructure.lookup_pid(old_workflow_pid)
+        if not do_old_wf.resource_type == "SOFTWARE":
+            raise Exception("The given PID for the old workflow version is not of resource type SOFTWARE. Did you provide the correct PID?")
+        new_wf_id = do_old_wf.identifier
+        id_name_failed = False
+        if new_wf_id.count("/") < 2:
+            # no slash in suffix; start counting from here then..
+            new_wf_id += "/1"
+        else:
+            slashpos = new_wf_id.rfind("/")
+            old_num = new_wf_id[slashpos+1:]
+            try:
+                old_num = int(old_num)
+                new_num = old_num+1
+                new_wf_id = new_wf_id[:slashpos]+"/"+new_num
+            except:
+                # no number after last slash.. use a random ID
+                id_name_failed = True
+        if id_name_failed:
+            # something went wrong when trying to construct a new PID from the old one; use a random one..
+            do_new_wf = self.infrastructure.create_do()
+        else:
+            do_new_wf = self.infrastructure.create_do(new_wf_id)
+        do_new_wf.resource_location = sourcecode_svn_url
+        do_new_wf.resource_type = "SOFTWARE"
+        do_new_wf.add_do_reference("derived-from", do_old_wf)
+        return do_new_wf.identifier
     
     def on_workflow_was_run(self, workflow_pid, input_data_list, output):
         """
