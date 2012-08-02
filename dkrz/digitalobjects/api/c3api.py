@@ -159,10 +159,14 @@ class C3APIConnector(object):
         do_new_wf.add_do_reference("derived-from", do_old_wf)
         return do_new_wf.identifier
     
-    def on_workflow_was_run(self, workflow_pid, input_data_list, output):
+    def on_workflow_was_run(self, workflow_pid, input_pid_list, output):
         """
         Event handler to call when a workflow has been run on input data to produce output data.
         
-        :param output: still undefined..
+        :param workflow_pid: The PID of the workflow (the exact version) having been used.
+        :param input_pid_list: List of PIDs for input PIDs. Can be both data and metadata objects, or preferably 
+          collections thereof. 
+        :param output: still undefined - must connect data and MD objects correctly to their respective predecessors,
+          if possible. 
         """
         raise NotImplementedError()
