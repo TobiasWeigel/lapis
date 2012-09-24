@@ -43,7 +43,7 @@ class TestDOInfrastructure(unittest.TestCase):
         self.logger = logging.getLogger(__name__)
         self.random = Random(43210)
         self.created_pids = []
-        self.prefix = "10876/"
+        self.prefix = TESTING_CONFIG_DEFAULTS["handle-prefix"]+"/"
         
     def tearDown(self):
         pass
@@ -249,7 +249,7 @@ class TestHandleInfrastructure(TestDOInfrastructure):
         host = "localhost"
         port = 8080
         urlpath = "/handle/"
-        prefix = "10876"
+        prefix = TESTING_CONFIG_DEFAULTS["handle-prefix"]
         additional_identifier_element = "infra-test/"
         # check for test config file
         cfgparse = ConfigParser()
