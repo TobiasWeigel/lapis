@@ -1,0 +1,11 @@
+/.virtualenv
+/.project
+/.pydevproject
+*.pyc
+/doc/html
+.settings
+/docs/build
+/*.egg
+/dkrz.digitalobjects.egg-info
+/build/
+/dist/
