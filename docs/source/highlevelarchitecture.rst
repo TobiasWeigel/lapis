@@ -19,3 +19,5 @@ API is largely unaware of these operations.
 The following figure roughly summarizes the concept:
 
 .. image:: figures/lapis-stack.*
+
+Therefore, using Lapis typically means: Write a custom API for your use case, at the same level as e.g. the C3 API.

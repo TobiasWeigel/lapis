@@ -33,7 +33,7 @@ The top-level API offers the following **stable** services:
 * typed PID-to-PID references
 * basic PID collection (PID set) operations, including add, remove, iterate and containment queries
 * support for different low-level PID infrastructures/architectures
-* extensive unit testing of the implemented features
+* extensive unit testing of the implemented features using Nose
 
 The following services are currently **under construction**:
 
