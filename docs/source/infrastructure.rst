@@ -15,19 +15,19 @@ instance, which will map them, to a physical PID/DO infrastructure such as the H
 Infrastructure Base Class
 ------------------------- 
 
-.. autoclass:: dkrz.digitalobjects.infra.infrastructure.DOInfrastructure
+.. autoclass:: lapis.infra.infrastructure.DOInfrastructure
 
 In-Memory-Infrastructure Class
 ------------------------------
 
-.. autoclass:: dkrz.digitalobjects.infra.infrastructure.InMemoryInfrastructure
+.. autoclass:: lapis.infra.infrastructure.InMemoryInfrastructure
 
 Handle Infrastructure Class
 ---------------------------
 
-.. autoclass:: dkrz.digitalobjects.infra.handleinfrastructure.HandleInfrastructure 
+.. autoclass:: lapis.infra.handleinfrastructure.HandleInfrastructure 
 
 Exceptions
 ----------
 
-.. autoexception:: dkrz.digitalobjects.infra.handleinfrastructure.PIDAlreadyExistsError
+.. autoexception:: lapis.infra.handleinfrastructure.PIDAlreadyExistsError

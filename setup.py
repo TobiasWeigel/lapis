@@ -11,9 +11,9 @@ if sys.version_info < (2, 5):
 elif sys.version_info < (2, 6):
     requires += ["simplejson"]
 
-setup(name='dkrz.digitalobjects',
+setup(name='lapis',
       version=version,
-      description="Digital Object Infrastructure",
+      description="Lapis API for Persistent Identification Services",
       long_description="""\
 """,
       classifiers=[], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers

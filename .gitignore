@@ -6,6 +6,6 @@
 .settings
 /docs/build
 /*.egg
-/dkrz.digitalobjects.egg-info
+/lapis.egg-info
 /build/
 /dist/

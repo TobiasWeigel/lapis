@@ -7,4 +7,4 @@ To offer functionality for PID use cases in the C3 project (http://www.c3grid.de
 class that provides hogh-level methods for use by C3 developers. The class will map the project-specific 
 use cases down to PID operations.
 
-.. autoclass:: dkrz.digitalobjects.api.c3api.C3APIConnector
+.. autoclass:: lapis.api.c3api.C3APIConnector

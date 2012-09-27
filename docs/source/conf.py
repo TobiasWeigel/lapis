@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# dkrz-pid documentation build configuration file, created by
+# lapis documentation build configuration file, created by
 # sphinx-quickstart on Wed May 23 15:39:58 2012.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -42,8 +42,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'dkrz-pid'
-copyright = u'2012, Tobias Weigel'
+project = u'lapis'
+copyright = u'2012, Tobias Weigel, Deutsches Klimarechenzentrum GmbH'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -166,7 +166,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'dkrz-piddoc'
+htmlhelp_basename = 'lapisdoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -185,7 +185,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'dkrz-pid.tex', u'dkrz-pid Documentation',
+  ('index', 'lapis.tex', u'Lapis Documentation',
    u'Tobias Weigel', 'manual'),
 ]
 
@@ -215,7 +215,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'dkrz-pid', u'dkrz-pid Documentation',
+    ('index', 'lapis', u'Lapis Documentation',
      [u'Tobias Weigel'], 1)
 ]
 
@@ -229,8 +229,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'dkrz-pid', u'dkrz-pid Documentation',
-   u'Tobias Weigel', 'dkrz-pid', 'One line description of project.',
+  ('index', 'lapis', u'Lapis Documentation',
+   u'Tobias Weigel', 'lapis', 'One line description of project.',
    'Miscellaneous'),
 ]
 
