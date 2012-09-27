@@ -46,6 +46,10 @@ class DigitalObjectSet(DigitalObject):
 
     Internally, the set is maintained through DO references. The underlying infrastructure may serialize this structure
     in a different form.
+    
+    Note that the concept of collections is still very vague and open to lots of discussions - this is just a first
+    attempt to get some feeling for how they work. Eventually, the internal structure of collections may be influenced
+    by outcomes of the Research Data Alliance discussions/working groups.
     '''
     
     RESOURCE_TYPE = "DIGITAL_OBJECT_SET"

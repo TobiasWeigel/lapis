@@ -52,7 +52,9 @@ class DigitalObject(object):
     not have a resource location, but their data is held in native Python class instances within this software space. 
     On the other hand, if the Digital Object holds domain data, it will always provide an external resource location 
     and a resource type, which serves as the type of the Digital Object. External resources are held and accessed
-    outside of this particular Python implementation (e.g. in a data archive).
+    outside of this particular Python implementation (e.g. in a data archive). Thus, one might well state that class
+    instances do not fully represent Digital Objects - the discussion about terminology and concepts is certainly still
+    very much open.
     """
 
     def __init__(self, do_infrastructure, identifier, annotations = None, resource_location = None, resource_type = None, references = None, alias_identifiers = None):
