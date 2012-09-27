@@ -16,6 +16,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
    
+   highlevelarchitecture
    infrastructure
    digitalobject
    c3api
@@ -44,7 +45,7 @@ The package is also not optimized for request efficiency, meaning that a single 
 Prerequisites for running the service
 =====================================
 
-There are two infrastructure configurations this software is currently able to work on: native Handle system mode and EPIC APIc2 mode.
+There are two infrastructure configurations this software is currently able to work on: native Handle system mode and EPIC APIv2 mode.
 The top-level API operations behave the same way independent of the architecture chosen for the lower level.
 
 Native Handle system mode
@@ -54,7 +55,10 @@ All API calls will be broken down into operations for the native Handle System J
 This mode requires:
 
 * operational 'handle-rest' service
-* a Java Servlet container (e.g. Tomcat)
+
+ * github project site: https://github.com/TobiasWeigel/handle-rest
+ 
+* a Java Servlet container (e.g. Tomcat) for the handle-rest service
 * a Handle server with full administrative rights
 
 EPIC APIv2 mode
@@ -64,6 +68,10 @@ All API calls are redirected to the RESTful EPIC API service, implemented in JRu
 This mode requires:
 
 * operational EPIC API v2 service
+
+ * github project site: https://github.com/CatchPlus/EPIC-API-v2
+ * documentation available here: http://catchplus.github.com/EPIC-API-v2/
+ 
 * consequently, also a Handle server with full administrative rights, working on a MySQL database
 
 
