@@ -43,7 +43,7 @@ from lapis.model.do import DigitalObject
 from ConfigParser import ConfigParser
 from lapis.model.doset import DigitalObjectSet
 
-TESTING_CONFIG_DEFAULTS = {"handle-prefix": "10876", "server-address": "localhost", "server-port": 8001, "additional-identifier-element": "infra-test/"}
+TESTING_CONFIG_DEFAULTS = {"handle-prefix": "10876", "server-address": "handle.dkrz.de", "server-port": 8080, "additional-identifier-element": "infra-test/"}
 
 logger = logging.getLogger(__name__)
 

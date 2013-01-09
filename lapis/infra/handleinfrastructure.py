@@ -396,4 +396,9 @@ class HandleInfrastructure(DOInfrastructure):
                 res = (True, ele["data"])
                 break
         return res        
-                
+
+    def prefix_pid(self, suffix):
+        """
+        Prepends a given (incomplete) identifier with the current Handle prefix.
+        """
+        return self.prefix + "/" + suffix
