@@ -164,6 +164,14 @@ class DigitalObjectSet(DigitalObject):
         """
         return DigitalObjectSet.LazySetIterator(self)
     
+    def num_set_elements(self):
+        """
+        Returns the number of set member elements.
+        
+        :return: a non-negative int 
+        """
+        return len(self._elements)
+    
     def __iter__(self):
         return self.iter_set_elements()
     
