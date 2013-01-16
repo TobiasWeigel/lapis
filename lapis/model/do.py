@@ -185,6 +185,9 @@ class DigitalObject(object):
     def __hash__(self, *args, **kwargs):
         return hash(self._id)
     
+    def __eq__(self, other):
+        return self._id == other._id
+    
     def add_do_reference(self, semantics, reference):
         """
         Adds a reference to another Digital Object.
