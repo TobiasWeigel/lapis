@@ -29,10 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 The views and conclusions contained in the software and documentation are those
 of the authors.
 '''
-from lapis.model.do import DigitalObject
-
-REFERENCE_SUBELEMENT = "subelement"
-REFERENCE_SUBELEMENT_OF = "subelement-of"
+from lapis.model.do import DigitalObject, REFERENCE_SUBELEMENT, REFERENCE_SUBELEMENT_OF
 
 class DigitalObjectSet(DigitalObject):
     '''

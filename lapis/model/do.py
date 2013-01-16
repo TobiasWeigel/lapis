@@ -36,6 +36,9 @@ VALUETYPE_DATA = 0
 
 REGEX_PID = re.compile(r'^\d\w*(\.?\w+)*/.+')
 
+REFERENCE_SUBELEMENT = "subelement"
+REFERENCE_SUBELEMENT_OF = "subelement-of"
+
 class DigitalObject(object):
     """
     Digital Object representation in native Python.
@@ -91,7 +94,7 @@ class DigitalObject(object):
         else:
             self._references = {}
         if resource_type and not resource_location:
-            raise ValueError("You cannot provide a resource type, but no resource location!")
+            raise ValueError("Invalid Handle structure: Contains a resource type, but no resource location!")
         if alias_identifiers:
             self._alias_identifiers = alias_identifiers
         else:
@@ -278,6 +281,23 @@ class DigitalObject(object):
         :returns: A list of Digital Objects that matches the given relationship. The list will be empty if no such 
           relationships exist.
         """
+        refs = self.get_reference_pids(semantics)
+        res = []
+        for r in refs:
+            # assume r is a string PID
+            dobj = self._do_infra.lookup_pid(r)
+            res.append(dobj)
+        return res
+    
+    def get_reference_pids(self, semantics):
+        """
+        Returns all PIDs of referenced objects where the relationship type is the given semantics.
+
+        :param semantics: Indicates the relationship that is to be resolved. Can either be an arbitrary string or a
+          Digital Object instance. It is not safe to use a PID string here, although it might work occasionally.
+        :returns: A list of strings that are PIDs. The list will be empty if no references with given relationship 
+          semantics exist.
+        """
         # analyze semantics parameter
         if isinstance(semantics, DigitalObject):
             ref_key = semantics.identfier
@@ -286,14 +306,10 @@ class DigitalObject(object):
         # early exit if no such reference exists
         if not ref_key in self._references:
             return []
-        # otherwise, retrieve all referenced DOs
+        # otherwise, assemble list of pids
         refs = self._references[ref_key]
-        res = []
-        for r in refs:
-            # assume r is a string PID
-            dobj = self._do_infra.lookup_pid(r)
-            res.append(dobj)
-        return res
+        return refs
+        
     
     def iter_reference_keys(self):
         """
@@ -333,3 +349,11 @@ class DigitalObject(object):
         :returns: A list (may be empty).
         """
         return list(self._alias_identifiers)
+
+    def get_superset_pids(self):
+        """
+        Returns a list with the PIDs of all DigitalObjectSets which this object is element of.
+        
+        :returns: A list (may be empty).
+        """
+        return self.get_reference_pids(REFERENCE_SUBELEMENT_OF)
