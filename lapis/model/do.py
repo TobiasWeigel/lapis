@@ -204,6 +204,8 @@ class DigitalObject(object):
             if DigitalObject.is_PID(reference):
                 # lookup PID to check for valid object, then use its identifier (which should be equal to reference)
                 ref = self._do_infra.lookup_pid(reference)
+                if not ref:
+                    raise ValueError("Unable to resolve: %s" % reference)
                 ref = ref.identifier
             else:
                 raise ValueError("Invalid reference: %s" % reference)
