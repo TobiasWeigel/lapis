@@ -101,7 +101,7 @@ class HandleInfrastructure(DOInfrastructure):
     def _prepare_identifier(self, identifier):
         # check identifier string for validity
         if " " in identifier:
-            raise ValueError("Illegal Handle identifier string character; spaces are not supported!")
+            raise ValueError("Illegal Handle identifier string character; spaces are not supported! (identifier: %s)" % identifier)
         if (self.additional_identifier_element):
             # split identifier into prefix and suffix, insert additional element inbetween 
             parts = identifier.split("/", 1)
