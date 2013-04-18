@@ -247,7 +247,50 @@ class HandleInfrastructure(DOInfrastructure):
                 raise IllegalHandleStructureError("Handle %s does not have any more available index slots between %s and %s!" % (index_start, index_end))
             return m
         
+    def write_handle_value(self, identifier, index, valuetype, value):
+        """
+        Writes a single (index, type, value) to the Handle with given identifier.
         
+        :param identifier: The Handle identifier.
+        :param index: Index (positive 32 bit int).
+        :param valuetype: Type (arbitrary)
+        :param value: Value (arbitrary)
+        """
+        path, identifier = self._prepare_identifier(identifier)
+        if type(index) is not int:
+            raise ValueError("Index must be an integer! (was: type %s, value %s)" % (type(index), index))
+        # write the raw (index, type, value) triple
+        http = HTTPConnection(self.host, self.port)
+        data = json.dumps([{"idx": index, "type": valuetype, "data": value}])
+        http.request("POST", path, data, DEFAULT_JSON_HEADERS)
+        resp = http.getresponse()
+        if not(200 <= resp.status <= 299):
+            raise IOError("Could not write raw value to Handle %s: %s" % (identifier, resp.reason))
+    
+    def read_handle_value(self, identifier, index):
+        """
+        Reads a single indexed type and value from the Handle with given identifier.
+        
+        :returns: A tuple (type, value) or None if the given index is unassigned.
+        :raises: :exc:`IOError` if no Handle with given identifier exists. 
+        """
+        path, identifier = self._prepare_identifier(identifier)
+        if type(index) is not int:
+            raise ValueError("Index must be an integer! (was: type %s, value %s)" % (type(index), index))
+        raise NotImplementedError()
+    
+    def remove_handle_value(self, identifier, index):
+        """
+        Removes a single Handle value at Handle of given identifier at given index.
+        
+        :raises: :exc:`IOError` if no Handle with given identifier exists. 
+        """
+        path, identifier = self._prepare_identifier(identifier)
+        if type(index) is not int:
+            raise ValueError("Index must be an integer! (was: type %s, value %s)" % (type(index), index))
+        raise NotImplementedError()
+            
+    
     def _write_annotation(self, identifier, key, value):
         http = HTTPConnection(self.host, self.port)
         path, identifier = self._prepare_identifier(identifier)
