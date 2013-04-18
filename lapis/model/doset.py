@@ -30,7 +30,6 @@ The views and conclusions contained in the software and documentation are those
 of the authors.
 '''
 from lapis.model.do import DigitalObject
-from lapis.model.hashmap import Hashmap
 
 class DigitalObjectSet(DigitalObject):
     '''
@@ -40,10 +39,13 @@ class DigitalObjectSet(DigitalObject):
     unrelated objects as well as hierarchical structures of data objects that are strongly connected.
     '''
 
+    RESOURCE_TYPE = "DIGITAL_OBJECT_SET"
     
     def __init__(self, do_infrastructure, identifier, annotations = None, references = None, alias_identifiers = None):
         super(DigitalObjectSet, self).__init__(do_infrastructure, identifier, annotations, resource_location=None, resource_type=None, references=references, alias_identifiers=alias_identifiers)
-        self.__hashmap = Hashmap.create(self._do_infra, self._id)
+        self._resource_type = DigitalObjectSet.RESOURCE_TYPE
+        self._resource_location = None
+        self.__hashmap = self._do_infra.manufacture_hashmap(self._id)
                 
     def add_do(self, dobj):
         """

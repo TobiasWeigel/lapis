@@ -32,7 +32,7 @@ of the authors.
 from random import Random
 import string
 from lapis.model.do import DigitalObject
-from lapis.model.doset import DigitalObjectSet
+from lapis.model.hashmap import HandleHashmapImpl
 
 class DOInfrastructure(object):
     """
@@ -256,6 +256,7 @@ class InMemoryInfrastructure(DOInfrastructure):
             self._resource_type = None
             self._references = {}
             self._identifier = None
+            self._hashmap = {}
         
         def read_from_do(self, do):
             """
@@ -275,6 +276,7 @@ class InMemoryInfrastructure(DOInfrastructure):
             """
             Generates a PID instance from the information stored in this memory element object.
             """
+            from lapis.model.doset import DigitalObjectSet
             if self._resource_type == DigitalObjectSet.RESOURCE_TYPE:
                 dobj = DigitalObjectSet(do_infra, identifier, annotations=self._annotations, references=self._references, alias_identifiers=aliases)
             else:
@@ -300,7 +302,6 @@ class InMemoryInfrastructure(DOInfrastructure):
             if not oele:
                 raise PIDAliasBrokenError("Alias %s has broken target %s!" % (identifier, self._original_id))
             return oele.build_do_instance(do_infra, self._original_id, aliases=al)
-            
     
     def __init__(self):
         super(InMemoryInfrastructure, self).__init__()
@@ -403,6 +404,26 @@ class InMemoryInfrastructure(DOInfrastructure):
             raise KeyError()
         return isinstance(ele, InMemoryInfrastructure.InMemoryElementAlias)
             
+    def write_handle_value(self, identifier, index, valuetype, value):        
+        ele = self._storage.get(identifier)
+        if not ele:
+            raise KeyError()
+        ele._hashmap[index] = (valuetype, value)
+    
+    def read_handle_value(self, identifier, index):
+        ele = self._storage.get(identifier)
+        if not ele:
+            raise KeyError()
+        return ele._hashmap.get(index, None)
+        
+    def remove_handle_value(self, identifier, index):
+        ele = self._storage.get(identifier)
+        if not ele:
+            raise KeyError()
+        del ele._hashmap[index]
+    
+    def manufacture_hashmap(self, identifier):
+        return HandleHashmapImpl(self, identifier)
     
 class PIDAlreadyExistsError(Exception):
     """

@@ -4,7 +4,9 @@ Created on 17.04.2013
 @author: tobiasweigel
 '''
 import sys
-from lapis.infra.handleinfrastructure import HandleInfrastructure
+import logging
+
+logger = logging.getLogger(__name__)
 
 HASHMASK = 2**31-1
 
@@ -20,16 +22,6 @@ class Hashmap(object):
         Constructor
         '''
         self._infra = infrastructure
-    
-    def __create(self, infrastructure, identifier):
-        """
-        Factory method.
-        """
-        if isinstance(infrastructure, HandleInfrastructure):
-            return HandleHashmapImpl(infrastructure, identifier)
-        raise TypeError("Unknown/unsupported infrastructure type: %s" % type(infrastructure))
-    
-    create = staticmethod(__create)
     
     def set(self, key, value):
         raise NotImplementedError()
@@ -61,7 +53,7 @@ class HandleHashmapImpl(Hashmap):
         h = self.__prepare_hash(key)
         # look at bucket
         bucket = self._infra.read_handle_value(self._id, h)
-        while not bucket or bucket[0] is not key:
+        while bucket and bucket[0] is not key:
             # simple linear probing
             h += 1
             if h > sys.maxint:
@@ -74,7 +66,7 @@ class HandleHashmapImpl(Hashmap):
         h = self.__prepare_hash(key)
         # look at bucket
         bucket = None
-        while not bucket:
+        while True:
             bucket = self._infra.read_handle_value(self._id, h)
             if not bucket:
                 return None
@@ -92,7 +84,7 @@ class HandleHashmapImpl(Hashmap):
         h = self.__prepare_hash(key)
         # look at bucket
         bucket = None
-        while not bucket:
+        while True:
             bucket = self._infra.read_handle_value(self._id, h)
             if not bucket:
                 return 

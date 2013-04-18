@@ -33,6 +33,7 @@ from lapis.infra.infrastructure import DOInfrastructure, PIDAlreadyExistsError, 
 from httplib import HTTPConnection
 from lapis.model.do import DigitalObject
 from lapis.model.doset import DigitalObjectSet
+from lapis.model.hashmap import HandleHashmapImpl
 
 try:
     import json
@@ -274,10 +275,21 @@ class HandleInfrastructure(DOInfrastructure):
         :returns: A tuple (type, value) or None if the given index is unassigned.
         :raises: :exc:`IOError` if no Handle with given identifier exists. 
         """
-        path, identifier = self._prepare_identifier(identifier)
+        path, identifier = self._prepare_identifier(index+":"+identifier)
         if type(index) is not int:
             raise ValueError("Index must be an integer! (was: type %s, value %s)" % (type(index), index))
-        raise NotImplementedError()
+        # read only the given index
+        http = HTTPConnection(self.host, self.port)
+        http.request("GET", path, "", DEFAULT_JSON_HEADERS)
+        resp = http.getresponse()
+        if not(200 <= resp.status <= 299):
+            raise IOError("Could not read raw value from Handle %s: %s" % (identifier, resp.reason))
+        respdata = json.load(resp)
+        for ele in respdata:
+            if int(ele["idx"]) == index:
+                return ele["data"]
+        return None
+        
     
     def remove_handle_value(self, identifier, index):
         """
@@ -285,10 +297,7 @@ class HandleInfrastructure(DOInfrastructure):
         
         :raises: :exc:`IOError` if no Handle with given identifier exists. 
         """
-        path, identifier = self._prepare_identifier(identifier)
-        if type(index) is not int:
-            raise ValueError("Index must be an integer! (was: type %s, value %s)" % (type(index), index))
-        raise NotImplementedError()
+        self.write_handle_value(identifier, index, None, None)
             
     
     def _write_annotation(self, identifier, key, value):
@@ -448,3 +457,9 @@ class HandleInfrastructure(DOInfrastructure):
         Prepends a given (incomplete) identifier with the current Handle prefix.
         """
         return self.prefix + "/" + suffix
+    
+    def manufacture_hashmap(self, identifier):
+        """
+        Factory method. Constructs Handle-based Hashmap implementation objects.
+        """
+        return HandleHashmapImpl(self, identifier)
