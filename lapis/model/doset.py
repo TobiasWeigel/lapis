@@ -41,6 +41,19 @@ class DigitalObjectSet(DigitalObject):
 
     RESOURCE_TYPE = "DIGITAL_OBJECT_SET"
     
+    class SetIterator(object):
+        
+        def __init__(self, doset):
+            self._doset = doset
+            self._index = 100
+        
+        def __iter__(self):
+            return self
+        
+        def next(self):
+            raise NotImplementedError()
+        
+
     def __init__(self, do_infrastructure, identifier, annotations = None, references = None, alias_identifiers = None):
         super(DigitalObjectSet, self).__init__(do_infrastructure, identifier, annotations, resource_location=None, resource_type=None, references=references, alias_identifiers=alias_identifiers)
         self._resource_type = DigitalObjectSet.RESOURCE_TYPE
@@ -104,7 +117,7 @@ class DigitalObjectSet(DigitalObject):
         
         :return: an iterator object
         """
-        return DigitalObjectSet.LazySetIterator(self)
+        return DigitalObjectSet.SetIterator(self)
     
     def num_set_elements(self):
         """
@@ -112,7 +125,7 @@ class DigitalObjectSet(DigitalObject):
         
         :return: a non-negative int 
         """
-        return len(self._elements)
+        raise NotImplementedError()
     
     def __iter__(self):
         return self.iter_set_elements()    
