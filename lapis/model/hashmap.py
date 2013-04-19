@@ -88,7 +88,7 @@ class HandleHashmapImpl(Hashmap):
             bucket = self._infra._read_pid_value(self._id, h)
             if not bucket:
                 return 
-            if bucket[0] is key:
+            if bucket[0] == key:
                 # found it; now remove handle value
                 self._infra._remove_pid_value(self._id, h)
                 return 

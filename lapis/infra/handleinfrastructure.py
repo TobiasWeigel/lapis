@@ -286,7 +286,15 @@ class HandleInfrastructure(DOInfrastructure):
         
         :raises: :exc:`IOError` if no Handle with given identifier exists. 
         """
-        self.write_handle_value(identifier, index, None, None)
+        path, identifier = self._prepare_identifier(str(index)+":"+str(identifier))
+        if type(index) is not int:
+            raise ValueError("Index must be an integer! (was: type %s, value %s)" % (type(index), index))
+        # read only the given index
+        http = HTTPConnection(self.host, self.port)
+        http.request("DELETE", path, "", DEFAULT_JSON_HEADERS)
+        resp = http.getresponse()
+        if not(200 <= resp.status <= 299):
+            raise IOError("Could not remove raw value from Handle %s: %s" % (identifier, resp.reason))
 
     def _read_all_pid_values(self, identifier):
         """
