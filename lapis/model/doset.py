@@ -29,7 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 The views and conclusions contained in the software and documentation are those
 of the authors.
 '''
-from lapis.model.do import DigitalObject
+from lapis.model.do import DigitalObject, REFERENCE_SUBELEMENT_OF
 
 class DigitalObjectSet(DigitalObject):
     '''
@@ -68,10 +68,12 @@ class DigitalObjectSet(DigitalObject):
                 if not isinstance(x, DigitalObject):
                     raise ValueError("The given list contains objects that are no Digital Object instances!")
                 self.__hashmap.set(x.identifier, x.identifier)
+                x.add_do_reference(REFERENCE_SUBELEMENT_OF, self)
         else:
             if not isinstance(dobj, DigitalObject):
                 raise ValueError("The given object is not a Digital Object instance: %s" % dobj)
             self.__hashmap.set(dobj.identifier, dobj.identifier)
+            dobj.add_do_reference(REFERENCE_SUBELEMENT_OF, self)
     
     def remove_do(self, dobj):
         """
@@ -84,10 +86,12 @@ class DigitalObjectSet(DigitalObject):
                 if not isinstance(x, DigitalObject):
                     raise ValueError("The given list contains objects that are no Digital Object instances!")
                 self.__hashmap.remove(x.identifier)
+                x.remove_do_reference(REFERENCE_SUBELEMENT_OF, self)
         else:
             if not isinstance(dobj, DigitalObject):
                 raise ValueError("The given object is not a Digital Object instance: %s" % dobj)
             self.__hashmap.remove(dobj.identifier)
+            dobj.remove_do_reference(REFERENCE_SUBELEMENT_OF, self)
     
     def contains_do(self, dobj):
         """
