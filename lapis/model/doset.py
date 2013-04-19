@@ -43,17 +43,15 @@ class DigitalObjectSet(DigitalObject):
     
     class SetIterator(object):
         
-        def __init__(self, doset):
-            self._doset = doset
-            self._index = 100
-        
-        def __iter__(self):
-            return self
-        
+        def __init__(self, doset, hashiter):
+            self.__doset = doset
+            self.__hashiter = hashiter
+            
         def next(self):
-            raise NotImplementedError()
-        
-
+            index, vt, v = self.__hashiter.next()
+            dobj = self.__doset.infrastructure.resolve_pid(v)
+            return dobj
+    
     def __init__(self, do_infrastructure, identifier, references = None, alias_identifiers = None):
         super(DigitalObjectSet, self).__init__(do_infrastructure, identifier, references=references, alias_identifiers=alias_identifiers)
         self.resource_type = DigitalObjectSet.RESOURCE_TYPE
@@ -116,7 +114,12 @@ class DigitalObjectSet(DigitalObject):
         
         :return: an iterator object
         """
-        return DigitalObjectSet.SetIterator(self)
+        for idx, v in self.__hashmap:
+            if idx < 1000:
+                # skip organizational values
+                continue
+            dobj = self._do_infra.lookup_pid(v[1])
+            yield dobj
     
     def num_set_elements(self):
         """

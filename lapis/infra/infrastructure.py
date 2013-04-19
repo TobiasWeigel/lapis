@@ -342,7 +342,7 @@ class InMemoryInfrastructure(DOInfrastructure):
         ele = self._storage.get(identifier)
         if not ele:
             raise KeyError("Identifier not assigned: %s" % identifier)
-        return dict(ele._hashmap)        
+        return dict(ele._hashmap)
     
     def _storage_resolve(self, identifier):
         """

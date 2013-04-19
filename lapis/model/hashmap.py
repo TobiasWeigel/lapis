@@ -95,3 +95,7 @@ class HandleHashmapImpl(Hashmap):
             h += 1
             if h > sys.maxint:
                 h = 1000
+                
+    def __iter__(self):
+        cached_values = self._infra._read_all_pid_values(self._id)
+        return cached_values.iteritems()

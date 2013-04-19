@@ -89,6 +89,11 @@ class DigitalObject(object):
             self._alias_identifiers = alias_identifiers
         else:
             self._alias_identifiers = []
+    
+    def _get_do_infrastructure(self):
+        return self._do_infra        
+    
+    infrastructure = property(_get_do_infrastructure, doc="The infrastructure this instance is using.")
         
     def _set_resource_location(self, location):
         """
