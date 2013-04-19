@@ -390,24 +390,6 @@ class InMemoryInfrastructure(DOInfrastructure):
             raise KeyError()
         return isinstance(ele, InMemoryInfrastructure.InMemoryElementAlias)
             
-    def write_handle_value(self, identifier, index, valuetype, value):        
-        ele = self._storage.get(identifier)
-        if not ele:
-            raise KeyError()
-        ele._hashmap[index] = (valuetype, value)
-    
-    def read_handle_value(self, identifier, index):
-        ele = self._storage.get(identifier)
-        if not ele:
-            raise KeyError()
-        return ele._hashmap.get(index, None)
-        
-    def remove_handle_value(self, identifier, index):
-        ele = self._storage.get(identifier)
-        if not ele:
-            raise KeyError()
-        del ele._hashmap[index]
-    
     def manufacture_hashmap(self, identifier):
         return HandleHashmapImpl(self, identifier)
     

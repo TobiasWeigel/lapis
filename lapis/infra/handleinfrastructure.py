@@ -148,6 +148,7 @@ class HandleInfrastructure(DOInfrastructure):
         """
         # piddata is an array of dicts, where each dict has keys: index, type, data
         references = {}
+        res_type = None
         for ele in piddata:
             idx = int(ele["idx"])
             if idx == 2:
@@ -261,19 +262,22 @@ class HandleInfrastructure(DOInfrastructure):
         :returns: A tuple (type, value) or None if the given index is unassigned.
         :raises: :exc:`IOError` if no Handle with given identifier exists. 
         """
-        path, identifier = self._prepare_identifier(index+":"+identifier)
+        path, identifier = self._prepare_identifier(str(index)+":"+str(identifier))
         if type(index) is not int:
             raise ValueError("Index must be an integer! (was: type %s, value %s)" % (type(index), index))
         # read only the given index
         http = HTTPConnection(self.host, self.port)
         http.request("GET", path, "", DEFAULT_JSON_HEADERS)
         resp = http.getresponse()
+        if resp.status == 404:
+            # value not found; the Handle may exist, but the index is unused
+            return None        
         if not(200 <= resp.status <= 299):
             raise IOError("Could not read raw value from Handle %s: %s" % (identifier, resp.reason))
         respdata = json.load(resp)
         for ele in respdata:
             if int(ele["idx"]) == index:
-                return ele["data"]
+                return (ele["type"], ele["data"])
         return None
         
     def _remove_pid_value(self, identifier, index):

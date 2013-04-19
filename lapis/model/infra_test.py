@@ -252,8 +252,8 @@ class TestHandleInfrastructure(TestDOInfrastructure):
     def setUp(self):
         TestDOInfrastructure.setUp(self)
         # test parameters
-        host = "localhost"
-        port = 8080
+        host = "handle.dkrz.de"
+        port = 8090
         urlpath = "/handle/"
         prefix = TESTING_CONFIG_DEFAULTS["handle-prefix"]
         additional_identifier_element = "infra-test/"
