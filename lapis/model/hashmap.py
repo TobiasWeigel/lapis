@@ -46,7 +46,7 @@ class HandleHashmapImpl(Hashmap):
         self._id = identifier
         
     def __prepare_hash(self, key):
-        return max(hash(key) & HASHMASK, 100)
+        return max(hash(key) & HASHMASK, 1000)
     
     def set(self, key, value):
         # hash key and truncate to positive 32 bit int
@@ -57,7 +57,7 @@ class HandleHashmapImpl(Hashmap):
             # simple linear probing
             h += 1
             if h > sys.maxint:
-                h = 100
+                h = 1000
             bucket = self._infra.read_handle_value(self._id, h)
         self._infra.write_handle_value(self._id, h, key, value)
         
@@ -74,7 +74,7 @@ class HandleHashmapImpl(Hashmap):
                 return bucket[1]
             h += 1
             if h > sys.maxint:
-                h = 100
+                h = 1000
     
     def contains(self, key):
         return self.get(key) is not None
@@ -94,4 +94,4 @@ class HandleHashmapImpl(Hashmap):
                 return 
             h += 1
             if h > sys.maxint:
-                h = 100
+                h = 1000

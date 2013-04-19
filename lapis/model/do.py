@@ -60,7 +60,7 @@ class DigitalObject(object):
     very much open.
     """
 
-    def __init__(self, do_infrastructure, identifier, annotations = None, resource_location = None, resource_type = None, references = None, alias_identifiers = None):
+    def __init__(self, do_infrastructure, identifier, references = None, alias_identifiers = None):
         """
         Constructor. Only called by the factory or other infrastructure methods that construct/reconstruct KeyMD 
         instances.
@@ -79,77 +79,17 @@ class DigitalObject(object):
           an alias PID. This should be a list of identifier strings. The process which lead to the DO started at the 
           first list entry. The list will be assigned directly, not copied.
         """
-        if annotations and (not isinstance(annotations, dict)):
-            raise TypeError("Invalid type for annotations of a Digital Object: %s; contents: %s" % (type(annotations), repr(annotations)))
         self._id = identifier
         self._do_infra = do_infrastructure
-        self._resource_location = resource_location
-        self._resource_type = resource_type
-        if annotations:
-            self._annotations = annotations
-        else:
-            self._annotations = {}
         if references:
             self._references = references
         else:
             self._references = {}
-        if resource_type and not resource_location:
-            raise ValueError("Invalid Handle structure: Contains a resource type, but no resource location!")
         if alias_identifiers:
             self._alias_identifiers = alias_identifiers
         else:
             self._alias_identifiers = []
         
-    def set_annotations(self, annotations):
-        """
-        Overwrites all annotations for this DO with the new ones given in a dictionary.
-        
-        Remember that, in theory, annotations are not supposed to change after a DO has been created.
-        
-        :param annotations: New annotations to replace the old ones (if any). Must be a dictionary.  
-        """
-        self._annotations = annotations.copy()
-        self._do_infra._write_all_annotations(self._id, self._annotations)
-        
-    def set_annotation(self, key, value):
-        """
-        Sets the annotation with given key to a new value.
-
-        Remember that, in theory, annotations are not supposed to change after a DO has been created.
-        
-        :param key: A string key. A key may also be seen as a type, but note that this is not a data type in the strict 
-          sense, but rather a semantic specification (i.e. 'e-mail' or 'url', where the data type is both String).
-        :param value: An arbitrarily typed value.
-        """
-        key_s = str(key)
-        self._annotations[key_s] = value
-        self._do_infra._write_annotation(self._id, key_s, value)
-        
-    def get_annotation(self, key):
-        """
-        Returns the annotation value for the given key.
-        
-        :param key: A string key.
-        :returns: The value associated with the key or None if key did not exist
-        """
-        key_s = str(key)
-        return self._annotations.get(key_s)
-        
-    def iter_annotations(self):
-        """
-        Returns an iterator over all annotations
-        """
-        return self._annotations.iteritems()
-        
-    def clear_annotations(self):
-        """
-        Clears all annotations. This does not affect the resource location and similar informations.
-
-        Remember that, in theory, annotations are not supposed to change after a DO has been created.
-        """
-        self._annotations = {}
-        self._do_infra._write_all_annotations(self._id, {})
-
     def _set_resource_location(self, location):
         """
         Sets the resource location of this DO.
@@ -157,20 +97,24 @@ class DigitalObject(object):
         :param location: A string which provides domain-relevant information about the location of the referenced
             resource.
         """
-        self._resource_location = location
-        self._do_infra._write_resource_information(self._id, self._resource_location, self._resource_type)
+        self._do_infra._write_pid_value(self._id, 1, "URL", location)
         
     def _get_resource_location(self):
-        return self._resource_location
+        v = self._do_infra._read_pid_value(self._id, 1)
+        if not v:
+            return None
+        return v[1]
 
     resource_location = property(_get_resource_location, _set_resource_location, doc="The location of the resource this DO refers to.")
         
     def _get_resource_type(self):
-        return self._resource_type
+        v = self._do_infra._read_pid_value(self._id, 2)
+        if not v:
+            return None
+        return v[1]
     
     def _set_resource_type(self, resource_type):
-        self._resource_type = resource_type
-        self._do_infra._write_resource_information(self._id, self._resource_location, self._resource_type)
+        self._do_infra._write_pid_value(self._id, 2, "RESOURCE_TYPE", resource_type)
 
     resource_type = property(_get_resource_type, _set_resource_type, doc="The type of this Digital Object's external data. The type of this Digital Object may also be implicit through its class; then, the resource type should be None.")
 

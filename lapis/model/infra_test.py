@@ -79,7 +79,6 @@ class TestDOInfrastructure(unittest.TestCase):
         pid = self.prefix+"test_do_values"
         resloc = "http://www.example.com/1"
         restype = "MY_TEST_TYPE"
-        annot1 = "test annotation 1"
         pid2 = self.prefix+"test_do_values_2"
         pid3 = self.prefix+"test_do_values_3"
         # create DO
@@ -90,16 +89,11 @@ class TestDOInfrastructure(unittest.TestCase):
         assert dobj.resource_location == resloc
         dobj.resource_type = restype
         assert dobj.resource_type == restype
-        dobj.set_annotation("annot1", annot1)
-        assert dobj.get_annotation("annot1") == annot1
-        assert dobj.get_annotation("nonexisting") == None
         # look up and assert
         dobj2 = self.do_infra.lookup_pid(pid)
         assert dobj2 != None
         assert dobj2.resource_location == resloc
         assert dobj2.resource_type == restype
-        assert dobj2.get_annotation("annot1") == annot1
-        assert dobj2.get_annotation("nonexisting") == None
         # create a second DO
         dobj2 = self.do_infra.create_do(pid2)
         self.created_pids.append(pid2)

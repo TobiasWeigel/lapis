@@ -124,60 +124,51 @@ class DOInfrastructure(object):
         """
         raise NotImplementedError()
     
-    def _write_all_annotations(self, identifier, annotations):
+    def _write_pid_value(self, identifier, index, valuetype, value):
         """
-        Writes the annotations for the object with the given identifier. All existing annotations, even for keys not 
-        in the given annotations dict, are cleared prior to rewrite, i.e. the method performs a full replacement 
-        operation. Thus, you can also use this method to clear all annotations.
+        Writes a single (index, type, value) entry to a PID record.
         
-        :param identifier: string identifier, i.e. the Digital Object's PID.
-        :param annotations: a dict with string keys and arbitrarily typed values.
+        :param identifier: the full identifier.
+        :param index: a positive 32 bit int.
+        :param valuetype: arbitrary data.
+        :param value: arbitrary data.
         """
         raise NotImplementedError()
     
-    def _write_annotation(self, identifier, key, value):
+    def _read_pid_value(self, identifier, index):
         """
-        Sets the annotation of the object with given identifier and key to the given value. Annotations of other 
-        keys remain unchanged.
+        Reads a single (type, value) entry from a PID record at given index.
+        Will raise an exception if no PID with given identifier exists. 
         
-        :param identifier: string identifier, i.e. the Digital Object's PID.
-        :param key: string key.
-        :param value: arbitrarily typed value.
+        :param identifier: the full identifier.
+        :param index: a positive 32 bit int.
+        :return: a (type, value) tuple or None if the index is unassigned.
         """
         raise NotImplementedError()
     
-    def _write_resource_information(self, identifier, resource_location=None, resource_type=None):
+    def _remove_pid_value(self, identifier, index):
         """
-        Sets the resource location and type for the Digital Object with given identifier, i.e. sets the data of the 
-        Digital Object to an external resource.
+        Removes a single value from the PID record at given index.
         
-        Either resource_type or resource_location may be None. If the resource_type is None, the given external resource
-        is of undefined or unknown type. If the resource_location is None, the resource is not an external entity, but
-        a conceptual construct such as e.g. a composite or set of other Digital Objects. 
-        
-        :param resource_location: the resource location (string). May be None for special cases.
-        :param resource_type: the type of resource existing at the location. Defaults to None for unspecified resource
-          type. 
+        :param identifier: the full identifier.
+        :param index: a positive 32 bit int.
         """
         raise NotImplementedError()
     
+    def _read_all_pid_values(self, identifier):
+        """
+        Reads the full PID record.
+        
+        :param identifier: the full identifier.
+        :return: a dict with indexes as keys and (type, value) tuples as values.
+        """
+        raise NotImplementedError()
+   
     def delete_do(self, identifier):
         """
         Deletes the Digital Object with given identifier. Be careful, this operation cannot be undone!
         
         :raises: :exc:`KeyError` if no object exists with the given identifier 
-        """
-        raise NotImplementedError()
-    
-    def _write_reference(self, identifier, key, reference):
-        """
-        Sets the reference of the object with given identifier and key to the given value. Other reference entries
-        remain unchanged.
-        
-        :param identifier: string identifier, i.e. the Digital Object's PID.
-        :param key: string key.
-        :param value: arbitrarily typed value. Can be a list. If value is None, 0, empty list etc., the method will
-          try to remove the entry.        
         """
         raise NotImplementedError()
     
@@ -251,7 +242,6 @@ class InMemoryInfrastructure(DOInfrastructure):
         """
         
         def __init__(self):
-            self._annotations = {}
             self._resource_location = None
             self._resource_type = None
             self._references = {}
@@ -263,9 +253,6 @@ class InMemoryInfrastructure(DOInfrastructure):
             Takes the given DO instance and stores its content in special attributes. Will not store the DO instance 
             itself!
             """
-            self._annotations = {}
-            for k,v in do.iter_annotations():
-                self._annotations[k] = v 
             self._resource_location = do.resource_location
             self._resource_type = do.resource_type
             self._references = {}
@@ -278,9 +265,9 @@ class InMemoryInfrastructure(DOInfrastructure):
             """
             from lapis.model.doset import DigitalObjectSet
             if self._resource_type == DigitalObjectSet.RESOURCE_TYPE:
-                dobj = DigitalObjectSet(do_infra, identifier, annotations=self._annotations, references=self._references, alias_identifiers=aliases)
+                dobj = DigitalObjectSet(do_infra, identifier, references=self._references, alias_identifiers=aliases)
             else:
-                dobj = DigitalObject(do_infra, identifier, self._annotations, self._resource_location, self._resource_type, self._references, aliases)
+                dobj = DigitalObject(do_infra, identifier, self._references, aliases)
             return dobj
         
     class InMemoryElementAlias(object):
@@ -333,6 +320,30 @@ class InMemoryInfrastructure(DOInfrastructure):
             return None
         return ele.build_do_instance(self, identifier)
     
+    def _read_pid_value(self, identifier, index):
+        ele = self._storage.get(identifier)
+        if not ele:
+            raise KeyError("Identifier not assigned: %s" % identifier)
+        return ele._hashmap.get(index, None)
+        
+    def _write_pid_value(self, identifier, index, valuetype, value):
+        ele = self._storage.get(identifier)
+        if not ele:
+            raise KeyError("Identifier not assigned: %s" % identifier)
+        ele._hashmap[index] = (valuetype, value)
+        
+    def _remove_pid_value(self, identifier, index):
+        ele = self._storage.get(identifier)
+        if not ele:
+            raise KeyError("Identifier not assigned: %s" % identifier)
+        del ele._hashmap[index]        
+        
+    def _read_all_pid_values(self, identifier):
+        ele = self._storage.get(identifier)
+        if not ele:
+            raise KeyError("Identifier not assigned: %s" % identifier)
+        return dict(ele._hashmap)        
+    
     def _storage_resolve(self, identifier):
         """
         Resolves the given identifier in the internal storage. Will follow aliases.
@@ -344,31 +355,6 @@ class InMemoryInfrastructure(DOInfrastructure):
             return self._storage_resolve(ele._original_id)
         return ele
     
-    def _write_annotation(self, identifier, key, value):
-        ele = self._storage_resolve(identifier)
-        if not ele:
-            raise KeyError
-        ele._annotations[key] = value
-
-    def _write_annotations(self, identifier, annotations):
-        ele = self._storage_resolve(identifier)
-        if not ele:
-            raise KeyError
-        ele._annotations.update(annotations)
-        
-    def _write_resource_information(self, identifier, resource_location=None, resource_type=None):
-        ele = self._storage_resolve(identifier)
-        if not ele:
-            raise KeyError
-        ele._resource_location = resource_location
-        ele._resource_type = resource_type
-
-    def _write_all_annotations(self, identifier, annotations):
-        ele = self._storage_resolve(identifier)
-        if not ele:
-            raise KeyError
-        ele._annotations = annotations
-        
     def _write_reference(self, identifier, key, reference):
         ele = self._storage_resolve(identifier)
         if not ele:

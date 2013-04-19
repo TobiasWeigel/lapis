@@ -147,27 +147,14 @@ class HandleInfrastructure(DOInfrastructure):
         :returns: A fully fledged DigitalObject instance
         """
         # piddata is an array of dicts, where each dict has keys: index, type, data
-        annotations = {}
         references = {}
-        res_loc = None
-        res_type = None
         for ele in piddata:
             idx = int(ele["idx"])
-            if idx == INDEX_RESOURCE_LOCATION:
-                res_loc = ele["data"]
-                continue
-            if idx == INDEX_RESOURCE_TYPE:
+            if idx == 2:
                 res_type = ele["data"]
                 continue
             if ele["type"] == "HS_ADMIN":
                 # ignore HS_ADMIN values; these are taken care of by the REST service server-side
-                continue
-            if ele["type"] in annotations and idx >= ANNOTATION_INDEX_START:
-                # multiple data for one key.. allowed in Handles, but not in our PIDs. --> Construct a list.
-                if isinstance(annotations[ele["type"]], list):
-                    annotations[ele["type"]].append(ele["data"])
-                else:
-                    annotations[ele["type"]] = [annotations[ele["type"]], ele["data"]]
                 continue
             # no special circumstances --> assign to annotations or references
             if REFERENCE_INDEX_END >= idx >= REFERENCE_INDEX_START:
@@ -180,11 +167,10 @@ class HandleInfrastructure(DOInfrastructure):
                 else:
                     references[ele["type"]].extend(list_data)
                 continue
-            annotations[ele["type"]] = ele["data"]
         # create special instances for special resource types
         if res_type == DigitalObjectSet.RESOURCE_TYPE:
-            return DigitalObjectSet(self, identifier, annotations, references=references, alias_identifiers=aliases)
-        return DigitalObject(self, identifier, annotations, res_loc, res_type, references, alias_identifiers=aliases)
+            return DigitalObjectSet(self, identifier, references=references, alias_identifiers=aliases)
+        return DigitalObject(self, identifier, references, alias_identifiers=aliases)
         
     def lookup_pid(self, identifier):
         aliases = []
@@ -248,7 +234,7 @@ class HandleInfrastructure(DOInfrastructure):
                 raise IllegalHandleStructureError("Handle %s does not have any more available index slots between %s and %s!" % (index_start, index_end))
             return m
         
-    def write_handle_value(self, identifier, index, valuetype, value):
+    def _write_pid_value(self, identifier, index, valuetype, value):
         """
         Writes a single (index, type, value) to the Handle with given identifier.
         
@@ -268,7 +254,7 @@ class HandleInfrastructure(DOInfrastructure):
         if not(200 <= resp.status <= 299):
             raise IOError("Could not write raw value to Handle %s: %s" % (identifier, resp.reason))
     
-    def read_handle_value(self, identifier, index):
+    def _read_pid_value(self, identifier, index):
         """
         Reads a single indexed type and value from the Handle with given identifier.
         
@@ -290,65 +276,33 @@ class HandleInfrastructure(DOInfrastructure):
                 return ele["data"]
         return None
         
-    
-    def remove_handle_value(self, identifier, index):
+    def _remove_pid_value(self, identifier, index):
         """
         Removes a single Handle value at Handle of given identifier at given index.
         
         :raises: :exc:`IOError` if no Handle with given identifier exists. 
         """
         self.write_handle_value(identifier, index, None, None)
-            
-    
-    def _write_annotation(self, identifier, key, value):
-        http = HTTPConnection(self.host, self.port)
-        path, identifier = self._prepare_identifier(identifier)
-        # first, we need to determine the index to use by looking at the key
-        http.request("GET", path)
-        resp = http.getresponse()
-        if not(200 <= resp.status <= 299):
-            raise IOError("Unknown Handle: %s" % identifier)
-        dodata = json.load(resp)
-        index = self._determine_index(identifier, dodata, key, ANNOTATION_INDEX_START)
-        # now we can write the annotation
-        http = HTTPConnection(self.host, self.port)
-        data = json.dumps([{"idx": index, "type": key, "data": value}])
-        http.request("POST", path, data, DEFAULT_JSON_HEADERS)
-        resp = http.getresponse()
-        if not(200 <= resp.status <= 299):
-            raise IOError("Could not write annotations to Handle %s: %s" % (identifier, resp.reason))
-        
-    def _write_all_annotations(self, identifier, annotations):
-        http = HTTPConnection(self.host, self.port)
-        path, identifier = self._prepare_identifier(identifier)
-        # must retrieve current Handle data to maintain the resource location and resource type
-        http.request("GET", path)
-        resp = http.getresponse()
-        if not(200 <= resp.status <= 299):
-            raise IOError("Unknown Handle: %s" % identifier)
-        piddata = json.load(resp)
-        res_type = None
-        resource_location = ""
-        for ele in piddata:
-            if ele["idx"] == INDEX_RESOURCE_TYPE:
-                res_type = ele["data"]
-            elif ele["idx"] == INDEX_RESOURCE_LOCATION:
-                resource_location = ele["data"]
-        # convert annotations to Handle values
-        handle_values = [{"idx": INDEX_RESOURCE_TYPE, "type": TYPE_RESOURCE_TYPE, "data": res_type},
-                           {"idx": INDEX_RESOURCE_LOCATION, "type": "", "data": resource_location}]
-        current_index = ANNOTATION_INDEX_START
-        for k, v in annotations.iteritems():
-            handle_values.append({"idx": current_index, "type": k, "data": v})
-            current_index += 1
-        # now store new Handle values, replacing ALL old ones
-        http = HTTPConnection(self.host, self.port)
-        data = json.dumps(handle_values)
-        http.request("PUT", path, data, DEFAULT_JSON_HEADERS)
-        resp = http.getresponse()
-        if not(200 <= resp.status <= 299):
-            raise IOError("Could not write annotations to Handle %s: %s" % (identifier, resp.reason))
 
+    def _read_all_pid_values(self, identifier):
+        """
+        Reads the full Handle record of given identifier.
+        
+        :return: a dict with indexes as keys and (type, value) tuples as values.
+        """
+        path, identifier = self._prepare_identifier(identifier)
+        # read full record
+        http = HTTPConnection(self.host, self.port)
+        http.request("GET", path, "", DEFAULT_JSON_HEADERS)
+        resp = http.getresponse()
+        if not(200 <= resp.status <= 299):
+            raise IOError("Could not read raw values from Handle %s: %s" % (identifier, resp.reason))
+        respdata = json.load(resp)
+        res = {}
+        for ele in respdata:
+            res[int(ele["idx"])] = (ele["type"], ele["data"])
+        return res
+    
     def _write_resource_information(self, identifier, resource_location, resource_type=None):
         http = HTTPConnection(self.host, self.port)
         path, identifier = self._prepare_identifier(identifier)
