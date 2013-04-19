@@ -70,7 +70,7 @@ class HandleHashmapImpl(Hashmap):
             bucket = self._infra._read_pid_value(self._id, h)
             if not bucket:
                 return None
-            if bucket[0] is key:
+            if bucket[0] == key:
                 return bucket[1]
             h += 1
             if h > sys.maxint:
