@@ -131,7 +131,7 @@ class DigitalObjectSet(DigitalObject):
         
         :return: a non-negative int 
         """
-        raise NotImplementedError()
+        return self.__hashmap.size()
     
     def __iter__(self):
         return self.iter_set_elements()    

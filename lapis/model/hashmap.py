@@ -9,6 +9,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 HASHMASK = 2**31-1
+VALUETYPE_HASHMAP_SIZE = "HASHMAP_SIZE"
+INDEX_HASHMAP_SIZE = 999
 
 class Hashmap(object):
     '''
@@ -44,6 +46,7 @@ class HandleHashmapImpl(Hashmap):
         """
         super(HandleHashmapImpl, self).__init__(infrastructure)
         self._id = identifier
+        self._infra._write_pid_value(self._id, INDEX_HASHMAP_SIZE, VALUETYPE_HASHMAP_SIZE, 0)
         
     def __prepare_hash(self, key):
         return max(hash(key) & HASHMASK, 1000)
@@ -60,6 +63,8 @@ class HandleHashmapImpl(Hashmap):
                 h = 1000
             bucket = self._infra._read_pid_value(self._id, h)
         self._infra._write_pid_value(self._id, h, key, value)
+        if not bucket:
+            self.__modify_size(1)
         
     def get(self, key):
         # hash key and truncate to positive 32 bit int
@@ -91,6 +96,7 @@ class HandleHashmapImpl(Hashmap):
             if bucket[0] == key:
                 # found it; now remove handle value
                 self._infra._remove_pid_value(self._id, h)
+                self.__modify_size(-1)
                 return 
             h += 1
             if h > sys.maxint:
@@ -99,3 +105,11 @@ class HandleHashmapImpl(Hashmap):
     def __iter__(self):
         cached_values = self._infra._read_all_pid_values(self._id)
         return cached_values.iteritems()
+            
+    def __modify_size(self, a):
+        s = int(self._infra._read_pid_value(self._id, INDEX_HASHMAP_SIZE))
+        s += a
+        self._infra._write_pid_value(self._id, INDEX_HASHMAP_SIZE, VALUETYPE_HASHMAP_SIZE, s)
+
+    def size(self):
+        return int(self._infra._read_pid_value(self._id, INDEX_HASHMAP_SIZE))
