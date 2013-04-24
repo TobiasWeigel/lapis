@@ -107,9 +107,9 @@ class HandleHashmapImpl(Hashmap):
         return cached_values.iteritems()
             
     def __modify_size(self, a):
-        s = int(self._infra._read_pid_value(self._id, INDEX_HASHMAP_SIZE))
+        s = int(self._infra._read_pid_value(self._id, INDEX_HASHMAP_SIZE)[1])
         s += a
         self._infra._write_pid_value(self._id, INDEX_HASHMAP_SIZE, VALUETYPE_HASHMAP_SIZE, s)
 
     def size(self):
-        return int(self._infra._read_pid_value(self._id, INDEX_HASHMAP_SIZE))
+        return int(self._infra._read_pid_value(self._id, INDEX_HASHMAP_SIZE)[1])
