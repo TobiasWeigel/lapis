@@ -213,6 +213,7 @@ class TestDOInfrastructure(unittest.TestCase):
             id_ele.index(sele.identifier)
             num_subele += 1
         assert num_subele == 3
+        assert ele_set.num_set_elements() == 3
         # now extend and check again
         ele_set = self.do_infra.lookup_pid(id_set)
         id_ele += [self.prefix+"setele4"]
@@ -228,6 +229,7 @@ class TestDOInfrastructure(unittest.TestCase):
             num_subele += 1
             assert sele.get_references("subelement-of")
         assert num_subele == 4
+        assert ele_set.num_set_elements() == 4        
         # containment checks
         non_ele = self.do_infra.create_do(non_ele_id)
         self.created_pids.append(non_ele.identifier)
@@ -243,6 +245,7 @@ class TestDOInfrastructure(unittest.TestCase):
             num_subele += 1
         assert num_subele == 3
         assert len(self.do_infra.lookup_pid(id_ele[0]).get_references("subelement-of")) == 0
+        assert ele_set.num_set_elements() == 3
         
         
                 

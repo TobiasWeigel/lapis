@@ -46,7 +46,8 @@ class HandleHashmapImpl(Hashmap):
         """
         super(HandleHashmapImpl, self).__init__(infrastructure)
         self._id = identifier
-        self._infra._write_pid_value(self._id, INDEX_HASHMAP_SIZE, VALUETYPE_HASHMAP_SIZE, 0)
+        if not self._infra._read_pid_value(self._id, INDEX_HASHMAP_SIZE):
+            self._infra._write_pid_value(self._id, INDEX_HASHMAP_SIZE, VALUETYPE_HASHMAP_SIZE, 0)
         
     def __prepare_hash(self, key):
         return max(hash(key) & HASHMASK, 1000)
