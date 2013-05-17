@@ -278,7 +278,18 @@ class TestDOInfrastructure(unittest.TestCase):
         for i in range(len(id_arrayele)):
             dobj = self.do_infra.lookup_pid(id_arrayele[i])
             assert do_array.index_of(dobj) == i
-        # insert an element and re-do all checks
+        # remove middle element
+        do_array.remove_do(1)
+        assert do_array.num_elements() == 2
+        assert do_array.get_do(0).identifier == id_arrayele[0]
+        assert do_array.get_do(1).identifier == id_arrayele[2]
+        assert do_array.contains(id_arrayele[1]) == False
+        # re-insert at beginning
+        do_array.insert_do(arrayele[1], 0)
+        assert do_array.num_elements() == 3
+        assert do_array.get_do(0).identifier == id_arrayele[1]
+        assert do_array.get_do(1).identifier == id_arrayele[0]
+        assert do_array.get_do(2).identifier == id_arrayele[2]
                 
                 
 
