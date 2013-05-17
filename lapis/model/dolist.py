@@ -73,9 +73,11 @@ class DigitalObjectArray(DigitalObject):
         """
         Inserts a new element at the given index. All current elements with an equal or higher index are shifted. 
         """
-        highest_index = self.num_elements()
+        arraysize = self.num_elements()
+        if index < 0 or index > arraysize-1:
+            raise IndexError("Index too high: %s (array size is only %s)" % (index, arraysize))
         # shift all higher entries
-        for i in range(highest_index, index, -1):
+        for i in range(arraysize, index, -1):
             v = self._do_infra._read_pid_value(self._id, self.CATEGORY_MASK_VALUE+i-1)
             self._do_infra._write_pid_value(self._id, self.CATEGORY_MASK_VALUE+i, v[0], v[1])
         # now overwrite at given index
@@ -86,13 +88,15 @@ class DigitalObjectArray(DigitalObject):
         """
         Removes the element at the given index. 
         """
-        highest_index = self.num_elements()
+        arraysize = self.num_elements()
+        if index < 0 or index > arraysize-1:
+            raise IndexError("Index too high: %s (array size is only %s)" % (index, arraysize))
         # shift all higher entries
-        for i in range(highest_index-1, index, -1):
+        for i in range(arraysize-1, index, -1):
             v = self._do_infra._read_pid_value(self._id, self.CATEGORY_MASK_VALUE+i)
             self._do_infra._write_pid_value(self._id, self.CATEGORY_MASK_VALUE+i-1, v[0], v[1])
         # clear highest index
-        self._do_infra._remove_pid_value(self._id, self.CATEGORY_MASK_VALUE+highest_index-1)
+        self._do_infra._remove_pid_value(self._id, self.CATEGORY_MASK_VALUE+arraysize-1)
         self.__modify_size(-1)
         
     def get_do(self, index):
@@ -100,6 +104,8 @@ class DigitalObjectArray(DigitalObject):
         Returns the element at the given index.
         """
         v = self._do_infra._read_pid_value(self._id, self.CATEGORY_MASK_VALUE+index)
+        if not v:
+            raise IndexError("Index out of range or corrupt Array Handle record! (index: %s, ID: %s)" % (index, self._id))
         if v[0] != self.VALUETYPE_ARRAY_ELEMENT:
             raise Exception("Irregular type for an array element: %s" % v[0])
         dobj = self._do_infra.lookup_pid(v[1])
@@ -148,8 +154,8 @@ class DigitalObjectArray(DigitalObject):
                 return True
         return False
         
-    
-    
+
+
     
 class DigitalObjectLinkedListElement(DigitalObject):
     pass
