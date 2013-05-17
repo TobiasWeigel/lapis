@@ -39,6 +39,9 @@ REGEX_PID = re.compile(r'^\d\w*(\.?\w+)*/.+')
 REFERENCE_SUBELEMENT = "subelement"
 REFERENCE_SUBELEMENT_OF = "subelement-of"
 
+PAYLOAD_BITS = 24
+MAX_PAYLOAD = 2**PAYLOAD_BITS-1
+
 class DigitalObject(object):
     """
     Digital Object representation in native Python.

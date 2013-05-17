@@ -42,6 +42,7 @@ from lapis.model.do import DigitalObject
 
 from ConfigParser import ConfigParser
 from lapis.model.doset import DigitalObjectSet
+from lapis.model.dolist import DigitalObjectArray
 
 TESTING_CONFIG_DEFAULTS = {"handle-prefix": "10876", "server-address": "handle.dkrz.de", "server-port": 8080, "additional-identifier-element": "infra-test/"}
 
@@ -247,7 +248,29 @@ class TestDOInfrastructure(unittest.TestCase):
         assert len(self.do_infra.lookup_pid(id_ele[0]).get_references("subelement-of")) == 0
         assert ele_set.num_set_elements() == 3
         
-        
+    def test_lists(self):
+        id_array = self.prefix+"array"
+        id_arrayele = [self.prefix+"arrayele1", self.prefix+"arrayele2", self.prefix+"arrayele3"]
+        arrayele = []
+        # create elements
+        for i in range(len(id_arrayele)):
+            newele = self.do_infra.create_do(id_arrayele[i])
+            arrayele.append(newele)
+            id_arrayele[i] = newele.identifier
+            self.created_pids.append(newele.identifier)
+        # create array
+        do_array = self.do_infra.create_do(id_array, DigitalObjectArray)
+        self.created_pids.append(do_array.identifier)
+        assert do_array != None
+        # add array elements
+        for e in arrayele:
+            do_array.append_do(e)
+        assert do_array.num_elements() == len(arrayele)
+        # verify array elements
+        for i in range(len(arrayele)):
+            dobj = do_array.get_do(i)
+            assert dobj.identifier == id_arrayele[i]
+                
                 
 
 class TestHandleInfrastructure(TestDOInfrastructure):
