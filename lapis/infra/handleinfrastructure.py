@@ -34,6 +34,7 @@ from httplib import HTTPConnection
 from lapis.model.do import DigitalObject
 from lapis.model.doset import DigitalObjectSet
 from lapis.model.hashmap import HandleHashmapImpl
+from lapis.model.dolist import DigitalObjectArray
 
 try:
     import json
@@ -171,6 +172,8 @@ class HandleInfrastructure(DOInfrastructure):
         # create special instances for special resource types
         if res_type == DigitalObjectSet.RESOURCE_TYPE:
             return DigitalObjectSet(self, identifier, references=references, alias_identifiers=aliases)
+        if res_type == DigitalObjectArray.RESOURCE_TYPE:
+            return DigitalObjectArray(self, identifier, references=references, alias_identifiers=aliases)
         return DigitalObject(self, identifier, references, alias_identifiers=aliases)
         
     def lookup_pid(self, identifier):

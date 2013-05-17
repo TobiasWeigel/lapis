@@ -265,11 +265,20 @@ class TestDOInfrastructure(unittest.TestCase):
         # add array elements
         for e in arrayele:
             do_array.append_do(e)
+        # re-load array
+        do_array = self.do_infra.lookup_pid(id_array)
+        assert do_array is not None
         assert do_array.num_elements() == len(arrayele)
         # verify array elements
         for i in range(len(arrayele)):
+            assert do_array.contains(id_arrayele[i])
             dobj = do_array.get_do(i)
             assert dobj.identifier == id_arrayele[i]
+        # check index function
+        for i in range(len(id_arrayele)):
+            dobj = self.do_infra.lookup_pid(id_arrayele[i])
+            assert do_array.index_of(dobj) == i
+        # insert an element and re-do all checks
                 
                 
 

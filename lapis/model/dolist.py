@@ -117,22 +117,34 @@ class DigitalObjectArray(DigitalObject):
     def index_of(self, dobj):
         """
         Returns the index of the given dobj. If it is not in this list, raises a ValueError.
+        
+        :param dobj: A Digital Object instance or a PID.
         """
-        maxindex = self.num_elements()-1
-        for i in range(0, maxindex):
+        if isinstance(dobj, DigitalObject):
+            target_id = dobj.identifier
+        else:
+            target_id = dobj
+        arraysize = self.num_elements()
+        for i in range(0, arraysize):
             v = self._do_infra._read_pid_value(self._id, self.CATEGORY_MASK_VALUE+i)
-            if v[1] == dobj._id:
+            if v[1] == target_id:
                 return i
         raise ValueError("%s is not in this list." % dobj)
         
     def contains(self, dobj):
         """
         Returns True or False indicating whether the given object is in this list.
+        
+        :param dobj: A Digital Object instance or a PID. 
         """
-        maxindex = self.num_elements()-1
-        for i in range(0, maxindex):
+        if isinstance(dobj, DigitalObject):
+            target_id = dobj.identifier
+        else:
+            target_id = dobj
+        arraysize = self.num_elements()
+        for i in range(0, arraysize):
             v = self._do_infra._read_pid_value(self._id, self.CATEGORY_MASK_VALUE+i)
-            if v[1] == dobj._id:
+            if v[1] == target_id:
                 return True
         return False
         
