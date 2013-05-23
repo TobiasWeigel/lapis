@@ -42,7 +42,7 @@ from lapis.model.do import DigitalObject
 
 from ConfigParser import ConfigParser
 from lapis.model.doset import DigitalObjectSet
-from lapis.model.dolist import DigitalObjectArray
+from lapis.model.dolist import DigitalObjectArray, DigitalObjectLinkedList
 
 TESTING_CONFIG_DEFAULTS = {"handle-prefix": "10876", "server-address": "handle.dkrz.de", "server-port": 8080, "additional-identifier-element": "infra-test/"}
 
@@ -249,47 +249,55 @@ class TestDOInfrastructure(unittest.TestCase):
         assert ele_set.num_set_elements() == 3
         
     def test_lists(self):
-        id_array = self.prefix+"array"
-        id_arrayele = [self.prefix+"arrayele1", self.prefix+"arrayele2", self.prefix+"arrayele3"]
-        arrayele = []
+        id_listele = [self.prefix+"listele1", self.prefix+"listele2", self.prefix+"listele3"]
+        listele = []
         # create elements
-        for i in range(len(id_arrayele)):
-            newele = self.do_infra.create_do(id_arrayele[i])
-            arrayele.append(newele)
-            id_arrayele[i] = newele.identifier
+        for i in range(len(id_listele)):
+            newele = self.do_infra.create_do(id_listele[i])
+            listele.append(newele)
+            id_listele[i] = newele.identifier
             self.created_pids.append(newele.identifier)
-        # create array
+        # test array
+        id_array = self.prefix+"array"
         do_array = self.do_infra.create_do(id_array, DigitalObjectArray)
         self.created_pids.append(do_array.identifier)
-        assert do_array != None
+        self.list_basic(do_array, id_listele, listele)
+        # test linked list
+        id_llist = self.prefix+"linkedlist"
+        do_llist = self.do_infra.create_do(id_llist, DigitalObjectLinkedList)
+        self.created_pids.append(do_llist.identifier)
+        self.list_basic(do_llist, id_listele, listele)
+        
+    def list_basic(self, do_list, id_listele, listele):
+        assert do_list != None
         # add array elements
-        for e in arrayele:
-            do_array.append_do(e)
+        for e in listele:
+            do_list.append_do(e)
         # re-load array
-        do_array = self.do_infra.lookup_pid(id_array)
-        assert do_array is not None
-        assert do_array.num_elements() == len(arrayele)
+        do_list = self.do_infra.lookup_pid(do_list.identifier)
+        assert do_list is not None
+        assert do_list.num_elements() == len(listele)
         # verify array elements
-        for i in range(len(arrayele)):
-            assert do_array.contains(id_arrayele[i])
-            dobj = do_array.get_do(i)
-            assert dobj.identifier == id_arrayele[i]
+        for i in range(len(listele)):
+            assert do_list.contains(id_listele[i])
+            dobj = do_list.get_do(i)
+            assert dobj.identifier == id_listele[i]
         # check index function
-        for i in range(len(id_arrayele)):
-            dobj = self.do_infra.lookup_pid(id_arrayele[i])
-            assert do_array.index_of(dobj) == i
+        for i in range(len(id_listele)):
+            dobj = self.do_infra.lookup_pid(id_listele[i])
+            assert do_list.index_of(dobj) == i
         # remove middle element
-        do_array.remove_do(1)
-        assert do_array.num_elements() == 2
-        assert do_array.get_do(0).identifier == id_arrayele[0]
-        assert do_array.get_do(1).identifier == id_arrayele[2]
-        assert do_array.contains(id_arrayele[1]) == False
+        do_list.remove_do(1)
+        assert do_list.num_elements() == 2
+        assert do_list.get_do(0).identifier == id_listele[0]
+        assert do_list.get_do(1).identifier == id_listele[2]
+        assert do_list.contains(id_listele[1]) == False
         # re-insert at beginning
-        do_array.insert_do(arrayele[1], 0)
-        assert do_array.num_elements() == 3
-        assert do_array.get_do(0).identifier == id_arrayele[1]
-        assert do_array.get_do(1).identifier == id_arrayele[0]
-        assert do_array.get_do(2).identifier == id_arrayele[2]
+        do_list.insert_do(listele[1], 0)
+        assert do_list.num_elements() == 3
+        assert do_list.get_do(0).identifier == id_listele[1]
+        assert do_list.get_do(1).identifier == id_listele[0]
+        assert do_list.get_do(2).identifier == id_listele[2]
                 
                 
 

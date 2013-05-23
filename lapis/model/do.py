@@ -41,6 +41,11 @@ REFERENCE_SUBELEMENT_OF = "subelement-of"
 
 PAYLOAD_BITS = 24
 MAX_PAYLOAD = 2**PAYLOAD_BITS-1
+CAT1_MASK_VALUE = 1 << PAYLOAD_BITS
+CAT1_TARGET_MASK_BITS = 17
+MAX_PARENTS = 2**CAT1_TARGET_MASK_BITS-1
+VALUETYPE_PARENT_OBJECT = "PARENT_OBJECT"
+
 
 class DigitalObject(object):
     """
@@ -138,7 +143,10 @@ class DigitalObject(object):
         return hash(self._id)
     
     def __eq__(self, other):
-        return self._id == other._id
+        if isinstance(other, DigitalObject):
+            return self._id == other._id
+        else:
+            return False
     
     def add_do_reference(self, semantics, reference):
         """

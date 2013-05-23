@@ -264,11 +264,13 @@ class InMemoryInfrastructure(DOInfrastructure):
             Generates a PID instance from the information stored in this memory element object.
             """
             from lapis.model.doset import DigitalObjectSet
-            from lapis.model.dolist import DigitalObjectArray
+            from lapis.model.dolist import DigitalObjectArray, DigitalObjectLinkedList
             if self._resource_type == DigitalObjectSet.RESOURCE_TYPE:
                 dobj = DigitalObjectSet(do_infra, identifier, references=self._references, alias_identifiers=aliases)
             elif self._resource_type == DigitalObjectArray.RESOURCE_TYPE:
                 dobj = DigitalObjectArray(do_infra, identifier, references=self._references, alias_identifiers=aliases)
+            elif self._resource_type == DigitalObjectLinkedList.RESOURCE_TYPE:
+                dobj = DigitalObjectLinkedList(do_infra, identifier, references=self._references, alias_identifiers=aliases)
             else:
                 dobj = DigitalObject(do_infra, identifier, self._references, aliases)
             return dobj
