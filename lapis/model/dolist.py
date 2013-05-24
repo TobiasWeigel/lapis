@@ -249,10 +249,9 @@ class DigitalObjectLinkedList(DigitalObject):
         will cause an inefficient lookup operation to find the object.
         """
         # ***** Insert before given object *****
-        currentindex = 0
         if not isinstance(index_or_dobj, DigitalObject):
             # only index given; so iterate and find object, also determining the slot index
-            d, currentindex = self.get_do_and_slotindex(index_or_dobj)
+            d, i = self.get_do_and_slotindex(index_or_dobj)
             if not d:
                 raise ValueError("Given object %s is not part of this list %s!" % (index_or_dobj.identifier, self.identifier))
             index_or_dobj = d
@@ -402,18 +401,41 @@ class DigitalObjectLinkedList(DigitalObject):
             dobj_id, dobj_index = split_handle(self._do_infra._read_pid_value(dobj_id, dobj_index)[1])
             n += 1
         return n-1
-        
-    def next_element(self, current_dobj, current_ll_index):
+    
+    @staticmethod
+    def next_element(current_dobj, current_occurrence):
         """
         Returns the next element in the list after the given element or None if the given element is the last one.
+        As the method is static, it will use the given object's infrastructure to determine the next element.
         
-        :param current_ll_index: Only providing the PID/DO of the current object is not sufficient, because it may be 
-          part of the same list multiple times. Thus, we also need a reference to the current index in the frame of this 
-          particular object.
+        :param current_dobj: A DigitalObject instance
+        :param current_occurrence: Only providing the PID/DO of the current object is not sufficient, because it may be 
+          part of the same list multiple times. Thus, we also need a reference to the current occurrence index of this 
+          particular object. This is a valid Handle Value index and not to be confused with the list index of the item.
           
-        :returns: a tuple of (next_dobj, next_dobj_ll_index)
+        :returns: a tuple of (next_dobj, occurrence), where both are None if there is no next element
         """
-        raise NotImplementedError()
+        # occurrence index should be in cat 4; however, we need to check and tolerate also cat 1 indices
+        cat = current_occurrence >> PAYLOAD_BITS
+        if cat == 4:
+            if current_occurrence % 2 == 0:
+                # even number: must add 1 to have it point to the NEXT instead of the PREV
+                index = current_occurrence+1
+            else:
+                # odd number: okay, can use it rightaway
+                index = current_occurrence
+        elif cat == 1:
+            # cat 1 (i.e. points to containing list) - determine proper NEXT index
+            index = (current_occurrence & MAX_PAYLOAD)*2 + DigitalObjectLinkedList.CATEGORY_MASK_VALUE+1
+        else:
+            raise ValueError("Invalid occurrence index: %s!" % current_occurrence)            
+        v = current_dobj._do_infra._read_pid_value(current_dobj.identifier, index)
+        if not v:
+            return (None, None)
+        res_id, res_occ = split_handle(v[1])
+        if not res_id:
+            return (None, None)
+        return (current_dobj._do_infra.lookup_pid(res_id), res_occ)
     
     def num_elements(self):
         """
@@ -426,23 +448,25 @@ class DigitalObjectLinkedList(DigitalObject):
         """
         Return the last element in this list.
         
-        :returns: a DigitalObject instance or None.
+        :returns: a tuple (dobj, occurrence) where dobj is a DigitalObject instance and occurrence is the occurrence
+          index. The tuple will be (None, None) if the list is empty.
         """
         p = self._do_infra._read_pid_value(self.identifier, self.INDEX_LINKED_LIST_LAST_ELEMENT)[1]
         if not p:
-            return None
+            return (None, None)
         p, i = split_handle(p)
-        return self._do_infra.lookup_pid(p)
+        return self._do_infra.lookup_pid(p), i
     
     def first_element(self):
         """
         Return the first element in this list.
         
-        :returns: a DigitalObject instance or None.
+        :returns: a tuple (dobj, occurrence) where dobj is a DigitalObject instance and occurrence is the occurrence
+          index. The tuple will be (None, None) if the list is empty.
         """
         p = self._do_infra._read_pid_value(self.identifier, self.INDEX_LINKED_LIST_FIRST_ELEMENT)[1]
         if not p:
-            return None
+            return (None, None)
         p, i = split_handle(p)
-        return self._do_infra.lookup_pid(p)
+        return self._do_infra.lookup_pid(p), i
     

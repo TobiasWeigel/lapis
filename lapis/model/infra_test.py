@@ -267,6 +267,7 @@ class TestDOInfrastructure(unittest.TestCase):
         do_llist = self.do_infra.create_do(id_llist, DigitalObjectLinkedList)
         self.created_pids.append(do_llist.identifier)
         self.list_basic(do_llist, id_listele, listele)
+        self.list_linked(do_llist, id_listele, listele)
         
     def list_basic(self, do_list, id_listele, listele):
         assert do_list != None
@@ -320,7 +321,33 @@ class TestDOInfrastructure(unittest.TestCase):
         except:
             raise 
                             
-                
+    def list_linked(self, do_list, id_listele, listele):
+        # do_list is empty
+        assert do_list.first_element() == (None, None)
+        assert do_list.last_element() == (None, None)
+        # add all entries
+        for ele in listele:
+            do_list.append_do(ele)
+        # add some duplicates
+        do_list.append_do(listele[0])
+        do_list.append_do(listele[2])
+        do_list.append_do(listele[1])
+        do_list.append_do(listele[1])
+        do_list.append_do(listele[1])
+        # re-load
+        do_list = self.do_infra.lookup_pid(do_list.identifier)
+        assert do_list is not None
+        assert do_list.num_elements() == 8
+        assert do_list.first_element()[0].identifier == id_listele[0]
+        assert do_list.last_element()[0].identifier == id_listele[1]
+        # test forward iteration
+        e, occ = do_list.first_element()
+        i = 0
+        while e:
+            assert e.identifier == do_list.get_do(i).identifier
+            i += 1
+            e, occ = do_list.next_element(e, occ)
+        assert i == do_list.num_elements()
 
 class TestHandleInfrastructure(TestDOInfrastructure):
     
