@@ -44,7 +44,7 @@ from ConfigParser import ConfigParser
 from lapis.model.doset import DigitalObjectSet
 from lapis.model.dolist import DigitalObjectArray, DigitalObjectLinkedList
 
-TESTING_CONFIG_DEFAULTS = {"handle-prefix": "10876", "server-address": "handle.dkrz.de", "server-port": 8080, "additional-identifier-element": "infra-test/"}
+TESTING_CONFIG_DEFAULTS = { "handle-prefix": "10876", "server-address": "handleoracle.dkrz.de", "server-port": 8090 }
 
 logger = logging.getLogger(__name__)
 
@@ -354,8 +354,8 @@ class TestHandleInfrastructure(TestDOInfrastructure):
     def setUp(self):
         TestDOInfrastructure.setUp(self)
         # test parameters
-        host = "handle.dkrz.de"
-        port = 8090
+        host = TESTING_CONFIG_DEFAULTS["server-address"]
+        port = TESTING_CONFIG_DEFAULTS["server-port"]
         urlpath = "/handle/"
         prefix = TESTING_CONFIG_DEFAULTS["handle-prefix"]
         additional_identifier_element = "infra-test/"
