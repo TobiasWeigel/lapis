@@ -37,12 +37,12 @@ from lapis.model.do import DigitalObject, PAYLOAD_BITS, MAX_PAYLOAD, CAT1_TARGET
 def split_handle(handle):
     """
     Splits a Handle identifier conforming to the syntax index:prefix/suffix (index: is optional).
-    Returns a tuple of (main, index), where main is prefix/suffix and index might be empty if there is no index given.
+    Returns a tuple of (main, index), where main is prefix/suffix and index will be None if there is no index given.
     """
     i = handle.find(":")
     j = handle.find("/")
     if i == -1 or i > j:
-        return (handle, "")
+        return (handle, None)
     return (handle[i+1:], int(handle[:i]))
 
 class DigitalObjectArray(DigitalObject):
@@ -302,25 +302,21 @@ class DigitalObjectLinkedList(DigitalObject):
         pred_dobj, pred_dobj_slot = split_handle(self._do_infra._read_pid_value(dobj.identifier, self.CATEGORY_MASK_VALUE+dobj_slot*2)[1])
         succ_dobj, succ_dobj_slot = split_handle(self._do_infra._read_pid_value(dobj.identifier, self.CATEGORY_MASK_VALUE+dobj_slot*2+1)[1])
         if not pred_dobj:
-            # special case: remove first element
             if not succ_dobj:
-                # very special case: removed first and last element, i.e. clearing the list
-                s = ""
+                # special case: removed first and last element, i.e. clearing the list
+                self._do_infra._write_pid_value(self.identifier, self.INDEX_LINKED_LIST_FIRST_ELEMENT, self.VALUETYPE_LINKED_LIST_FIRST_ELEMENT, "")
+                self._do_infra._write_pid_value(self.identifier, self.INDEX_LINKED_LIST_LAST_ELEMENT, self.VALUETYPE_LINKED_LIST_LAST_ELEMENT, "")
             else:
-                s = "%s:%s" % (succ_dobj_slot, succ_dobj)
-            self._do_infra._write_pid_value(self.identifier, self.INDEX_LINKED_LIST_FIRST_ELEMENT, self.VALUETYPE_LINKED_LIST_FIRST_ELEMENT, s)
+                # special case: remove first element
+                self._do_infra._write_pid_value(self.identifier, self.INDEX_LINKED_LIST_FIRST_ELEMENT, self.VALUETYPE_LINKED_LIST_FIRST_ELEMENT, "%s:%s" % (succ_dobj_slot, succ_dobj))
+                self._do_infra._write_pid_value(succ_dobj, succ_dobj_slot-1, self.VALUETYPE_PREV_OBJECT, "")
+        elif not succ_dobj:
+            # special case: remove last element
+            self._do_infra._write_pid_value(self.identifier, self.INDEX_LINKED_LIST_LAST_ELEMENT, self.VALUETYPE_LINKED_LIST_LAST_ELEMENT, "%s:%s" % (pred_dobj_slot, pred_dobj))
+            self._do_infra._write_pid_value(pred_dobj, pred_dobj_slot+1, self.VALUETYPE_NEXT_OBJECT, "")
         else:
             # 1. pred.succ = dobj.succ
             self._do_infra._write_pid_value(pred_dobj, pred_dobj_slot+1, self.VALUETYPE_NEXT_OBJECT, "%s:%s" % (succ_dobj_slot, succ_dobj))
-        if not succ_dobj:
-            # special case: remove last element
-            if not succ_dobj:
-                # very special case: removed first and last element, i.e. clearing the list
-                s = ""
-            else:
-                s = "%s:%s" % (pred_dobj_slot, pred_dobj)
-            self._do_infra._write_pid_value(self.identifier, self.INDEX_LINKED_LIST_LAST_ELEMENT, self.VALUETYPE_LINKED_LIST_LAST_ELEMENT, s)
-        else:
             # 2. succ.pred = dobj.pred
             self._do_infra._write_pid_value(succ_dobj, succ_dobj_slot-1, self.VALUETYPE_PREV_OBJECT, "%s:%s" % (pred_dobj_slot, pred_dobj))
         # 3. dobj.parent = None

@@ -298,7 +298,28 @@ class TestDOInfrastructure(unittest.TestCase):
         assert do_list.get_do(0).identifier == id_listele[1]
         assert do_list.get_do(1).identifier == id_listele[0]
         assert do_list.get_do(2).identifier == id_listele[2]
-                
+        # insert same element twice
+        do_list.insert_do(listele[0], 0)
+        do_list.insert_do(listele[0], 3)
+        assert do_list.num_elements() == 5
+        assert do_list.get_do(0).identifier == id_listele[0]
+        assert do_list.get_do(1).identifier == id_listele[1]
+        assert do_list.get_do(2).identifier == id_listele[0]
+        assert do_list.get_do(3).identifier == id_listele[0]
+        assert do_list.get_do(4).identifier == id_listele[2]
+        # remove all elements
+        while do_list.num_elements() > 0:
+            do_list.remove_do(0)
+        assert do_list.num_elements() == 0
+        try:
+            do_list.get_do(0)
+            assert False
+        except IndexError:
+            # all fine
+            pass
+        except:
+            raise 
+                            
                 
 
 class TestHandleInfrastructure(TestDOInfrastructure):
