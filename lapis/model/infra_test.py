@@ -107,11 +107,24 @@ class TestDOInfrastructure(unittest.TestCase):
         dobj3.add_do_reference("successor", dobj2)
         dobj2.add_do_reference("predecessor", dobj3)
         dobj.add_do_reference("predecessor", dobj3)
+        dobj.set_property_value(20, "myproperty20", 1)
+        dobj.set_property_value(21, "myproperty21", "abc")
         # check references
         self.__check_dobj3_references(dobj3, dobj, dobj2)
         # retrieve dobj3 from infra and check references
         dobj3 = self.do_infra.lookup_pid(pid3)
         self.__check_dobj3_references(dobj3, dobj, dobj2)
+        # check properties
+        dobj = self.do_infra.lookup_pid(pid)
+        assert dobj.is_property_assigned(20) == True
+        assert dobj.is_property_assigned(21) == True
+        assert dobj.is_property_assigned(22) == False
+        assert dobj.get_property_value(20) == ("myproperty20", "1")
+        assert dobj.get_property_value(21) == ("myproperty21", "abc")
+        dobj.set_property_value(20, "myproperty20_b", "2")
+        assert dobj.get_property_value(20) == ("myproperty20_b", "2")
+        dobj = self.do_infra.lookup_pid(pid)
+        assert dobj.get_property_value(20) == ("myproperty20_b", "2")
         # delete and check for removal
         self.do_infra.delete_do(pid)
         dobj = self.do_infra.lookup_pid(pid)

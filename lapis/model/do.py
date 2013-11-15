@@ -322,3 +322,41 @@ class DigitalObject(object):
         :returns: A list (may be empty).
         """
         return self.get_reference_pids(REFERENCE_SUBELEMENT_OF)
+    
+    def set_property_value(self, property_index, property_name, property_value):
+        """
+        Sets a property value (key-metadata). Properties can be freely defined by any method or user and do not have
+         particular semantics within LAPIS.
+        
+        :param property_index: Index number for the property. Currently, only indices between 2 and 999 are freely available
+          (100 excluded). If the index is already in use, the method will overwrite it.
+        :param property_name: Name of the property.
+        :param property_value: Value of the property. This can be any type, which will however be converted to a String. 
+          The value may also be empty or None, in which case the property has a flag-type behaviour.
+        """
+        self.infrastructure._write_pid_value(self.identifier, property_index, "%s" % property_name, "%s" % property_value)
+    
+    def get_property_value(self, property_index):
+        """
+        Reads a property value (key-metadata).
+        
+        :param property_name: Name of the property.
+        :returns: Tuple with (name, value) of the property. The value will always be a string, except that it may be 
+          empty/None, indicating a flag-type property.
+        :raises: :exc:`KeyError` if the property has not been set.
+        """
+        r = self.infrastructure._read_pid_value(self.identifier, property_index)
+        if not r:
+            raise KeyError("Could not get property value: Index %s unassigned on identifier %s!" % (property_index, self.identifier))
+        return r
+    
+    def is_property_assigned(self, property_index):
+        """
+        Checks whether the property at given index has been assigned.
+        
+        :param property_index: Index of the property.
+        :returns: True or False.
+        """
+        r = self.infrastructure._read_pid_value(self.identifier, property_index)
+        return r != None
+        
