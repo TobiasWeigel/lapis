@@ -329,11 +329,16 @@ class DigitalObject(object):
          particular semantics within LAPIS.
         
         :param property_index: Index number for the property. Currently, only indices between 2 and 999 are freely available
-          (100 excluded). If the index is already in use, the method will overwrite it.
+          (100 excluded). If the index is already in use, the method will overwrite it only if the property names are identical.
+          This is designed to prevent accidental overwrites of important internal properties (e.g. hash map length).
         :param property_name: Name of the property.
         :param property_value: Value of the property. This can be any type, which will however be converted to a String. 
           The value may also be empty or None, in which case the property has a flag-type behaviour.
         """
+        current = self.infrastructure._read_pid_value(self.identifier, property_index)
+        if current and current[0] != property_name:
+            raise PropertyNameMismatchError("Tried to assign value %s to a property with new type %s to existing type %s at index %s of identifier %s" 
+                                            % (property_value, property_name, current[0], property_index, self.identifier))            
         self.infrastructure._write_pid_value(self.identifier, property_index, "%s" % property_name, "%s" % property_value)
     
     def get_property_value(self, property_index):
@@ -360,3 +365,11 @@ class DigitalObject(object):
         r = self.infrastructure._read_pid_value(self.identifier, property_index)
         return r != None
         
+
+class PropertyNameMismatchError(Exception):
+    """
+    Exception thrown when trying to assign a value to a property at an index where an existing property of different
+    name is already stored.
+    """   
+    pass
+

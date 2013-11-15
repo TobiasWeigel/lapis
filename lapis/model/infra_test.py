@@ -38,11 +38,12 @@ import logging
 import os
 from lapis.infra.handleinfrastructure import HandleInfrastructure
 
-from lapis.model.do import DigitalObject
+from lapis.model.do import DigitalObject, PropertyNameMismatchError
 
 from ConfigParser import ConfigParser
 from lapis.model.doset import DigitalObjectSet
 from lapis.model.dolist import DigitalObjectArray, DigitalObjectLinkedList
+from lapis.model.hashmap import INDEX_HASHMAP_SIZE
 
 TESTING_CONFIG_DEFAULTS = { "handle-prefix": "10876", "server-address": "handleoracle.dkrz.de", "server-port": 8090 }
 
@@ -121,10 +122,18 @@ class TestDOInfrastructure(unittest.TestCase):
         assert dobj.is_property_assigned(22) == False
         assert dobj.get_property_value(20) == ("myproperty20", "1")
         assert dobj.get_property_value(21) == ("myproperty21", "abc")
-        dobj.set_property_value(20, "myproperty20_b", "2")
-        assert dobj.get_property_value(20) == ("myproperty20_b", "2")
+        dobj.set_property_value(20, "myproperty20", "2")
+        assert dobj.get_property_value(20) == ("myproperty20", "2")
         dobj = self.do_infra.lookup_pid(pid)
-        assert dobj.get_property_value(20) == ("myproperty20_b", "2")
+        assert dobj.get_property_value(20) == ("myproperty20", "2")
+        # test prevention of property overwrite
+        try:
+            dobj.set_property_value(20, "this_should_not_work", "value")
+            self.fail("Successful overwrite of existing property with different name!")
+        except PropertyNameMismatchError:
+            pass
+        else:
+            raise
         # delete and check for removal
         self.do_infra.delete_do(pid)
         dobj = self.do_infra.lookup_pid(pid)
@@ -200,6 +209,8 @@ class TestDOInfrastructure(unittest.TestCase):
             self.fail("Could resolve broken alias chain without Exception being thrown!")
         except PIDAliasBrokenError:
             pass
+        else:
+            raise
         
     def test_sets(self):
         # create a set
@@ -260,6 +271,15 @@ class TestDOInfrastructure(unittest.TestCase):
         assert num_subele == 3
         assert len(self.do_infra.lookup_pid(id_ele[0]).get_references("subelement-of")) == 0
         assert ele_set.num_set_elements() == 3
+        # test prevention of property overwrite
+        try:
+            ele_set.set_property_value(INDEX_HASHMAP_SIZE, "this_should_not_work", "value")
+            self.fail("Successful overwrite of hashmap size through a property!")
+        except PropertyNameMismatchError:
+            pass
+        else:
+            raise
+        
         
     def test_lists(self):
         id_listele = [self.prefix+"listele1", self.prefix+"listele2", self.prefix+"listele3"]
