@@ -41,9 +41,9 @@ REFERENCE_SUBELEMENT_OF = "subelement-of"
 
 PAYLOAD_BITS = 24
 MAX_PAYLOAD = 2**PAYLOAD_BITS-1
-CAT1_MASK_VALUE = 1 << PAYLOAD_BITS
-CAT1_TARGET_MASK_BITS = 17
-MAX_PARENTS = 2**CAT1_TARGET_MASK_BITS-1
+SEGMENT_PARENTS_MASK_VALUE = 1 << PAYLOAD_BITS
+SEGMENT_PARENTS_TARGET_MASK_BITS = 17
+MAX_PARENTS = 2**SEGMENT_PARENTS_TARGET_MASK_BITS-1
 VALUETYPE_PARENT_OBJECT = "PARENT_OBJECT"
 
 
@@ -365,6 +365,56 @@ class DigitalObject(object):
         r = self.infrastructure._read_pid_value(self.identifier, property_index)
         return r != None
         
+    def _write_parent_info(self, parent_dobj):
+        """
+        Writes a reference to a parent object.
+        
+        :param: parent_dobj: The parent digital object.
+        :returns: the slot number (starting at 0, specific to the type of collection of parent_dobj)
+        """
+        freeslot = 0
+        parent_segment_target_mask = (parent_dobj.CHARACTERISTIC_SEGMENT_NUMBER << SEGMENT_PARENTS_TARGET_MASK_BITS) + SEGMENT_PARENTS_MASK_VALUE 
+        while True:
+            v = self._do_infra._read_pid_value(self.identifier, parent_segment_target_mask+freeslot)
+            if v:
+                freeslot += 1
+                if v == MAX_PARENTS:
+                    raise Exception("No more free parent slots in %s (starting at Index %s)!" % (self.identifier, parent_segment_target_mask))
+                continue
+            break
+        # now write to freeslot
+        self._do_infra._write_pid_value(self.identifier, parent_segment_target_mask+freeslot, VALUETYPE_PARENT_OBJECT, parent_dobj.identifier)
+        return freeslot
+    
+    def _remove_parent_info(self, parent_dobj):
+        """
+        Removes a reference to the given parent object.
+        
+        :param: parent_dobj: The parent digital object.
+        :returns: the slot number (starting at 0, specific to the type of collection of parent_dobj)
+        """
+        dobj_slot = 0
+        parent_segment_target_mask = (parent_dobj.CHARACTERISTIC_SEGMENT_NUMBER << SEGMENT_PARENTS_TARGET_MASK_BITS) + SEGMENT_PARENTS_MASK_VALUE
+        while True:
+            v = self._do_infra._read_pid_value(self.identifier, parent_segment_target_mask+dobj_slot)
+            if not v or dobj_slot == MAX_PARENTS:
+                raise ValueError("Object %s is not part of given parent collection %s!" % (self.identifier, parent_dobj.identifier))
+            if v[1] == parent_dobj.identifier:
+                break
+            dobj_slot += 1
+        # now remove info from slot
+        self._do_infra._remove_pid_value(self.identifier, parent_segment_target_mask+dobj_slot)
+        result = dobj_slot
+        # must also shift all higher entries so that there are no gaps - if there were gaps, the 'if not v' in the loop
+        # above will not work as expected
+        while dobj_slot < MAX_PARENTS:
+            dobj_slot += 1
+            v = self._do_infra._read_pid_value(self.identifier, parent_segment_target_mask+dobj_slot)
+            if not v: 
+                break
+            self._do_infra._write_pid_value(self.identifier, parent_segment_target_mask+dobj_slot-1, v[0], v[1])
+        return result
+                    
 
 class PropertyNameMismatchError(Exception):
     """

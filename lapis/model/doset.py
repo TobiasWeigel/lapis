@@ -75,23 +75,23 @@ class DigitalObjectSet(DigitalObject):
             self.__hashmap.set(dobj.identifier, dobj.identifier)
             dobj.add_do_reference(REFERENCE_SUBELEMENT_OF, self)
     
-    def remove_do(self, dobj):
+    def remove_do(self, dobj_or_index):
         """
         Removes the given Digital Object(s) from the set.
         
-        :param dobj: Either a DO instance or a list of DO instances.
+        :param dobj_or_index: Either a DO instance or a list of DO instances.
         """
-        if isinstance(dobj, list):
-            for x in dobj:
+        if isinstance(dobj_or_index, list):
+            for x in dobj_or_index:
                 if not isinstance(x, DigitalObject):
                     raise ValueError("The given list contains objects that are no Digital Object instances!")
                 self.__hashmap.remove(x.identifier)
                 x.remove_do_reference(REFERENCE_SUBELEMENT_OF, self)
         else:
-            if not isinstance(dobj, DigitalObject):
-                raise ValueError("The given object is not a Digital Object instance: %s" % dobj)
-            self.__hashmap.remove(dobj.identifier)
-            dobj.remove_do_reference(REFERENCE_SUBELEMENT_OF, self)
+            if not isinstance(dobj_or_index, DigitalObject):
+                raise ValueError("The given object is not a Digital Object instance: %s" % dobj_or_index)
+            self.__hashmap.remove(dobj_or_index.identifier)
+            dobj_or_index.remove_do_reference(REFERENCE_SUBELEMENT_OF, self)
     
     def contains_do(self, dobj):
         """

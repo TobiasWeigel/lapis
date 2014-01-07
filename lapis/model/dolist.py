@@ -31,8 +31,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 The views and conclusions contained in the software and documentation are those
 of the authors.
 '''
-from lapis.model.do import DigitalObject, PAYLOAD_BITS, MAX_PAYLOAD, CAT1_TARGET_MASK_BITS, VALUETYPE_PARENT_OBJECT,\
-    MAX_PARENTS, CAT1_MASK_VALUE
+from lapis.model.do import DigitalObject, PAYLOAD_BITS, MAX_PAYLOAD, SEGMENT_PARENTS_TARGET_MASK_BITS, VALUETYPE_PARENT_OBJECT,\
+    MAX_PARENTS, SEGMENT_PARENTS_MASK_VALUE
 
 def split_handle(handle):
     """
@@ -50,11 +50,13 @@ class DigitalObjectArray(DigitalObject):
     A list (sorted collection) of Digital Objects, realized as an indexed array.
     '''
 
+    CHARACTERISTIC_SEGMENT_NUMBER = 2
     RESOURCE_TYPE = "DIGITAL_OBJECT_ARRAY"
-    CATEGORY_MASK_VALUE = 2 << PAYLOAD_BITS
+    CATEGORY_MASK_VALUE = CHARACTERISTIC_SEGMENT_NUMBER << PAYLOAD_BITS
     INDEX_ARRAY_SIZE = 2000
     VALUETYPE_ARRAY_SIZE = "ARRAY_SIZE"
     VALUETYPE_ARRAY_ELEMENT = "ARRAY_ELEMENT"
+    MY_PARENT_SEGMENT_TARGET_MASK = (CHARACTERISTIC_SEGMENT_NUMBER << SEGMENT_PARENTS_TARGET_MASK_BITS) + SEGMENT_PARENTS_MASK_VALUE
 
     def __init__(self, do_infrastructure, identifier, references = None, alias_identifiers = None):
         super(DigitalObjectArray, self).__init__(do_infrastructure, identifier, references=references, alias_identifiers=alias_identifiers)
@@ -79,6 +81,8 @@ class DigitalObjectArray(DigitalObject):
         if newindex > MAX_PAYLOAD:
             raise IndexError("Arrays cannot have more than %s elements!" % MAX_PAYLOAD)
         self._do_infra._write_pid_value(self._id, newindex+self.CATEGORY_MASK_VALUE, self.VALUETYPE_ARRAY_ELEMENT, dobj._id)
+        # add info that self is parent of dobj
+        dobj._write_parent_info(self)
         self.__modify_size(1)
     
     def insert_do(self, dobj, index):
@@ -94,26 +98,34 @@ class DigitalObjectArray(DigitalObject):
             self._do_infra._write_pid_value(self._id, self.CATEGORY_MASK_VALUE+i, v[0], v[1])
         # now overwrite at given index
         self._do_infra._write_pid_value(self._id, self.CATEGORY_MASK_VALUE+index, self.VALUETYPE_ARRAY_ELEMENT, dobj._id)
+        # add info that self is parent of dobj
+        dobj._write_parent_info(self)
         self.__modify_size(1)
             
-    def remove_do(self, dobj):
+    def remove_do(self, dobj_or_index):
         """
         Removes the element at the given index or if a Digital Object instance is given, removes the given element
         if it is part of this array. 
+        
+        :param: dobj_or_index: The Digital Object to remove or an index. 
         """
         arraysize = self.num_elements()
-        if isinstance(dobj, DigitalObject):
-            index = self.index_of(dobj)
+        if isinstance(dobj_or_index, DigitalObject):
+            index = self.index_of(dobj_or_index)
+            dobj = dobj_or_index
         else:
-            index = dobj 
+            index = dobj_or_index 
+            dobj = self.get_do(index)
         if index < 0 or index > arraysize-1:
-            raise IndexError("Index too high: %s (array size is only %s)" % (index, arraysize))
+            raise IndexError("Index out of range: %s (array size is only %s)" % (index, arraysize))
         # shift all higher entries
-        for i in range(arraysize-1, index, -1):
-            v = self._do_infra._read_pid_value(self._id, self.CATEGORY_MASK_VALUE+i)
-            self._do_infra._write_pid_value(self._id, self.CATEGORY_MASK_VALUE+i-1, v[0], v[1])
+        for i in range(index, arraysize-1):
+            v = self._do_infra._read_pid_value(self._id, self.CATEGORY_MASK_VALUE+i+1)
+            self._do_infra._write_pid_value(self._id, self.CATEGORY_MASK_VALUE+i, v[0], v[1])
         # clear highest index
         self._do_infra._remove_pid_value(self._id, self.CATEGORY_MASK_VALUE+arraysize-1)
+        # remove info that self is parent of dobj_or_index
+        dobj._remove_parent_info(self)
         self.__modify_size(-1)
         
     def get_do(self, index):
@@ -173,15 +185,16 @@ class DigitalObjectArray(DigitalObject):
         
 class DigitalObjectLinkedList(DigitalObject):
 
+    CHARACTERISTIC_SEGMENT_NUMBER = 4
     RESOURCE_TYPE = "DIGITAL_OBJECT_LINKED_LIST"
-    CATEGORY_MASK_VALUE = 4 << PAYLOAD_BITS
+    CATEGORY_MASK_VALUE = CHARACTERISTIC_SEGMENT_NUMBER << PAYLOAD_BITS
     INDEX_LINKED_LIST_SIZE = 2001
     VALUETYPE_LINKED_LIST_SIZE = "LINKED_LIST_SIZE"
     INDEX_LINKED_LIST_FIRST_ELEMENT = 2002
     VALUETYPE_LINKED_LIST_FIRST_ELEMENT = "LINKED_LIST_FIRST_ELEMENT"
     INDEX_LINKED_LIST_LAST_ELEMENT = 2003
     VALUETYPE_LINKED_LIST_LAST_ELEMENT = "LINKED_LIST_LAST_ELEMENT"
-    CAT1_TARGET_MASK = (4 << CAT1_TARGET_MASK_BITS) + CAT1_MASK_VALUE
+    MY_PARENT_SEGMENT_TARGET_MASK = (CHARACTERISTIC_SEGMENT_NUMBER << SEGMENT_PARENTS_TARGET_MASK_BITS) + SEGMENT_PARENTS_MASK_VALUE
     
     VALUETYPE_PREV_OBJECT = "PREVIOUS_OBJECT"
     VALUETYPE_NEXT_OBJECT = "NEXT_OBJECT"
@@ -204,7 +217,7 @@ class DigitalObjectLinkedList(DigitalObject):
     def __find_free_slot(self, dobj):
         freeslot = 0 
         while True:
-            v = self._do_infra._read_pid_value(dobj.identifier, self.CAT1_TARGET_MASK+freeslot)
+            v = self._do_infra._read_pid_value(dobj.identifier, self.MY_PARENT_SEGMENT_TARGET_MASK+freeslot)
             if v:
                 freeslot += 1
                 if v == MAX_PARENTS:
@@ -225,10 +238,8 @@ class DigitalObjectLinkedList(DigitalObject):
         else:
             last_id = None
             last_id_and_index = ""
-        # 1. find free slot in category 1, subcategory 4
-        freeslot = self.__find_free_slot(dobj)
-        # free slot found; now fill in parent
-        self._do_infra._write_pid_value(dobj.identifier, self.CAT1_TARGET_MASK+freeslot, VALUETYPE_PARENT_OBJECT, self.identifier)
+        # fill in parent info and use free slot to write prev/next references
+        freeslot = dobj._write_parent_info(self)
         # cat4: write two entries (previous and next)
         self._do_infra._write_pid_value(dobj.identifier, self.CATEGORY_MASK_VALUE+freeslot*2,   self.VALUETYPE_PREV_OBJECT, last_id_and_index)
         self._do_infra._write_pid_value(dobj.identifier, self.CATEGORY_MASK_VALUE+freeslot*2+1, self.VALUETYPE_NEXT_OBJECT, "")
@@ -261,8 +272,8 @@ class DigitalObjectLinkedList(DigitalObject):
         if poentry[0] != self.VALUETYPE_PREV_OBJECT:
             raise Exception("Corrupt Linked List element record at %s:%s!" % (self.CATEGORY_MASK_VALUE+currentindex*2, index_or_dobj.identifier))
         prev_dobj_id_and_index = poentry[1]
-        # 1b. also determine free slot at dobj
-        dobj_freeslot = self.__find_free_slot(dobj)
+        # fill in parent info and use free slot to write prev/next references
+        dobj_freeslot = dobj._write_parent_info(self)
         # now fill in stuff! 
         if prev_dobj_id_and_index:
             # 2a. pred.succ = new_element
@@ -275,7 +286,7 @@ class DigitalObjectLinkedList(DigitalObject):
         # 3. index_or_dobj.pred = new_element
         self._do_infra._write_pid_value(index_or_dobj.identifier, self.CATEGORY_MASK_VALUE+currentindex*2, self.VALUETYPE_PREV_OBJECT, "%s:%s" % (self.CATEGORY_MASK_VALUE+dobj_freeslot*2, dobj.identifier))
         # 4. new_element.parent = self
-        self._do_infra._write_pid_value(dobj.identifier, self.CAT1_TARGET_MASK+dobj_freeslot, VALUETYPE_PARENT_OBJECT, self.identifier)
+        self._do_infra._write_pid_value(dobj.identifier, self.MY_PARENT_SEGMENT_TARGET_MASK+dobj_freeslot, VALUETYPE_PARENT_OBJECT, self.identifier)
         # 5. new_element.pred = pred
         self._do_infra._write_pid_value(dobj.identifier, self.CATEGORY_MASK_VALUE+dobj_freeslot*2, self.VALUETYPE_PREV_OBJECT, prev_dobj_id_and_index)
         # 6. new_element.succ = index_or_dobj
@@ -319,7 +330,7 @@ class DigitalObjectLinkedList(DigitalObject):
             # 2. succ.pred = dobj.pred
             self._do_infra._write_pid_value(succ_dobj, succ_dobj_slot-1, self.VALUETYPE_PREV_OBJECT, "%s:%s" % (pred_dobj_slot, pred_dobj))
         # 3. dobj.parent = None
-        self._do_infra._remove_pid_value(dobj.identifier, self.CAT1_TARGET_MASK+dobj_slot)
+        self._do_infra._remove_pid_value(dobj.identifier, self.MY_PARENT_SEGMENT_TARGET_MASK+dobj_slot)
         # 4. dobj.pred = None
         self._do_infra._remove_pid_value(dobj.identifier, self.CATEGORY_MASK_VALUE+dobj_slot*2)
         # 5. dobj.succ = None
@@ -333,7 +344,7 @@ class DigitalObjectLinkedList(DigitalObject):
         """                    
         dobj_slot = 0
         while True:
-            v = self._do_infra._read_pid_value(identifier, self.CAT1_TARGET_MASK+dobj_slot)
+            v = self._do_infra._read_pid_value(identifier, self.MY_PARENT_SEGMENT_TARGET_MASK+dobj_slot)
             if not v or dobj_slot == MAX_PARENTS:
                 raise ValueError("Given object %s is not part of this list %s!" % (identifier, self.identifier))
             if v[1] == self.identifier:
@@ -374,7 +385,7 @@ class DigitalObjectLinkedList(DigitalObject):
             dobj_id = dobj
         i = 0
         while True:
-            v = self._do_infra._read_pid_value(dobj_id, self.CAT1_TARGET_MASK+i)
+            v = self._do_infra._read_pid_value(dobj_id, self.MY_PARENT_SEGMENT_TARGET_MASK+i)
             if not v:
                 return False
             if v[1] == self.identifier:
