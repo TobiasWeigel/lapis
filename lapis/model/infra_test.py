@@ -341,6 +341,9 @@ class TestDOInfrastructure(unittest.TestCase):
         assert do_list.get_do(2).identifier == id_listele[0]
         assert do_list.get_do(3).identifier == id_listele[0]
         assert do_list.get_do(4).identifier == id_listele[2]
+        # check parents
+        for i in range(len(listele)):
+            assert listele[i].get_parent_pids(do_list.CHARACTERISTIC_SEGMENT_NUMBER) == set([do_list.identifier]) 
         # remove all elements
         while do_list.num_elements() > 0:
             do_list.remove_do(0)

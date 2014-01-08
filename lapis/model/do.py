@@ -414,6 +414,23 @@ class DigitalObject(object):
                 break
             self._do_infra._write_pid_value(self.identifier, parent_segment_target_mask+dobj_slot-1, v[0], v[1])
         return result
+    
+    def get_parent_pids(self, characteristic_segment_number):
+        """
+        Returns a set of all parent PIDs who are of given collection type.
+        
+        :param: characteristic_segment_number: designates the type of collection to filter.
+        """
+        offset = (characteristic_segment_number << SEGMENT_PARENTS_TARGET_MASK_BITS) + SEGMENT_PARENTS_MASK_VALUE
+        i = 0
+        parents = set()
+        while i < MAX_PARENTS:
+            v = self._do_infra._read_pid_value(self.identifier, offset+i)
+            if not v:
+                break
+            parents.add(v[1])
+            i += 1 
+        return parents
                     
 
 class PropertyNameMismatchError(Exception):
