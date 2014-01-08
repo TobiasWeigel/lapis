@@ -252,7 +252,7 @@ class TestDOInfrastructure(unittest.TestCase):
         for sele in ele_set.iter_set_elements():
             id_ele.index(sele.identifier)
             num_subele += 1
-            assert sele.get_references("subelement-of")
+            assert sele.get_parent_pids(ele_set.CHARACTERISTIC_SEGMENT_NUMBER) == set([id_set])
         assert num_subele == 4
         assert ele_set.num_set_elements() == 4        
         # containment checks
@@ -269,7 +269,7 @@ class TestDOInfrastructure(unittest.TestCase):
             id_ele.index(sele.identifier)
             num_subele += 1
         assert num_subele == 3
-        assert len(self.do_infra.lookup_pid(id_ele[0]).get_references("subelement-of")) == 0
+        assert len(self.do_infra.lookup_pid(id_ele[0]).get_parent_pids(ele_set.CHARACTERISTIC_SEGMENT_NUMBER)) == 0
         assert ele_set.num_set_elements() == 3
         # test prevention of property overwrite
         try:

@@ -40,6 +40,7 @@ class DigitalObjectSet(DigitalObject):
     '''
 
     RESOURCE_TYPE = "DIGITAL_OBJECT_SET"
+    CHARACTERISTIC_SEGMENT_NUMBER = 3
     
     class SetIterator(object):
         
@@ -68,12 +69,12 @@ class DigitalObjectSet(DigitalObject):
                 if not isinstance(x, DigitalObject):
                     raise ValueError("The given list contains objects that are no Digital Object instances!")
                 self.__hashmap.set(x.identifier, x.identifier)
-                x.add_do_reference(REFERENCE_SUBELEMENT_OF, self)
+                x._write_parent_info(self)
         else:
             if not isinstance(dobj, DigitalObject):
                 raise ValueError("The given object is not a Digital Object instance: %s" % dobj)
             self.__hashmap.set(dobj.identifier, dobj.identifier)
-            dobj.add_do_reference(REFERENCE_SUBELEMENT_OF, self)
+            dobj._write_parent_info(self)
     
     def remove_do(self, dobj_or_index):
         """
@@ -86,12 +87,12 @@ class DigitalObjectSet(DigitalObject):
                 if not isinstance(x, DigitalObject):
                     raise ValueError("The given list contains objects that are no Digital Object instances!")
                 self.__hashmap.remove(x.identifier)
-                x.remove_do_reference(REFERENCE_SUBELEMENT_OF, self)
+                x._remove_parent_info(self)
         else:
             if not isinstance(dobj_or_index, DigitalObject):
                 raise ValueError("The given object is not a Digital Object instance: %s" % dobj_or_index)
             self.__hashmap.remove(dobj_or_index.identifier)
-            dobj_or_index.remove_do_reference(REFERENCE_SUBELEMENT_OF, self)
+            dobj_or_index._remove_parent_info(self)
     
     def contains_do(self, dobj):
         """
