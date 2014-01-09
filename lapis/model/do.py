@@ -40,10 +40,10 @@ REFERENCE_SUBELEMENT = "subelement"
 REFERENCE_SUBELEMENT_OF = "subelement-of"
 
 PAYLOAD_BITS = 24
-MAX_PAYLOAD = 2**PAYLOAD_BITS-1
+MAX_PAYLOAD = 2 ** PAYLOAD_BITS - 1
 SEGMENT_PARENTS_MASK_VALUE = 1 << PAYLOAD_BITS
 SEGMENT_PARENTS_TARGET_MASK_BITS = 17
-MAX_PARENTS = 2**SEGMENT_PARENTS_TARGET_MASK_BITS-1
+MAX_PARENTS = 2 ** SEGMENT_PARENTS_TARGET_MASK_BITS - 1
 VALUETYPE_PARENT_OBJECT = "PARENT_OBJECT"
 
 
@@ -68,7 +68,7 @@ class DigitalObject(object):
     very much open.
     """
 
-    def __init__(self, do_infrastructure, identifier, references = None, alias_identifiers = None):
+    def __init__(self, do_infrastructure, identifier, references=None, alias_identifiers=None):
         """
         Constructor. Only called by the factory or other infrastructure methods that construct/reconstruct KeyMD 
         instances.
@@ -328,8 +328,8 @@ class DigitalObject(object):
         Sets a property value (key-metadata). Properties can be freely defined by any method or user and do not have
          particular semantics within LAPIS.
         
-        :param property_index: Index number for the property. Currently, only indices between 2 and 999 are freely available
-          (100 excluded). If the index is already in use, the method will overwrite it only if the property names are identical.
+        :param property_index: Index number for the property. Currently, only indices between 2 and 999 are defined to be freely available
+          (100 excluded), though the method will not enforce this. If the index is already in use, the method will overwrite it only if the property names are identical.
           This is designed to prevent accidental overwrites of important internal properties (e.g. hash map length).
         :param property_name: Name of the property.
         :param property_value: Value of the property. This can be any type, which will however be converted to a String. 
@@ -375,7 +375,7 @@ class DigitalObject(object):
         freeslot = 0
         parent_segment_target_mask = (parent_dobj.CHARACTERISTIC_SEGMENT_NUMBER << SEGMENT_PARENTS_TARGET_MASK_BITS) + SEGMENT_PARENTS_MASK_VALUE 
         while True:
-            v = self._do_infra._read_pid_value(self.identifier, parent_segment_target_mask+freeslot)
+            v = self._do_infra._read_pid_value(self.identifier, parent_segment_target_mask + freeslot)
             if v:
                 freeslot += 1
                 if v == MAX_PARENTS:
@@ -383,7 +383,7 @@ class DigitalObject(object):
                 continue
             break
         # now write to freeslot
-        self._do_infra._write_pid_value(self.identifier, parent_segment_target_mask+freeslot, VALUETYPE_PARENT_OBJECT, parent_dobj.identifier)
+        self._do_infra._write_pid_value(self.identifier, parent_segment_target_mask + freeslot, VALUETYPE_PARENT_OBJECT, parent_dobj.identifier)
         return freeslot
     
     def _remove_parent_info(self, parent_dobj):
@@ -396,23 +396,23 @@ class DigitalObject(object):
         dobj_slot = 0
         parent_segment_target_mask = (parent_dobj.CHARACTERISTIC_SEGMENT_NUMBER << SEGMENT_PARENTS_TARGET_MASK_BITS) + SEGMENT_PARENTS_MASK_VALUE
         while True:
-            v = self._do_infra._read_pid_value(self.identifier, parent_segment_target_mask+dobj_slot)
+            v = self._do_infra._read_pid_value(self.identifier, parent_segment_target_mask + dobj_slot)
             if not v or dobj_slot == MAX_PARENTS:
                 raise ValueError("Object %s is not part of given parent collection %s!" % (self.identifier, parent_dobj.identifier))
             if v[1] == parent_dobj.identifier:
                 break
             dobj_slot += 1
         # now remove info from slot
-        self._do_infra._remove_pid_value(self.identifier, parent_segment_target_mask+dobj_slot)
+        self._do_infra._remove_pid_value(self.identifier, parent_segment_target_mask + dobj_slot)
         result = dobj_slot
         # must also shift all higher entries so that there are no gaps - if there were gaps, the 'if not v' in the loop
         # above will not work as expected
         while dobj_slot < MAX_PARENTS:
             dobj_slot += 1
-            v = self._do_infra._read_pid_value(self.identifier, parent_segment_target_mask+dobj_slot)
+            v = self._do_infra._read_pid_value(self.identifier, parent_segment_target_mask + dobj_slot)
             if not v: 
                 break
-            self._do_infra._write_pid_value(self.identifier, parent_segment_target_mask+dobj_slot-1, v[0], v[1])
+            self._do_infra._write_pid_value(self.identifier, parent_segment_target_mask + dobj_slot - 1, v[0], v[1])
         return result
     
     def get_parent_pids(self, characteristic_segment_number):
@@ -425,7 +425,7 @@ class DigitalObject(object):
         i = 0
         parents = set()
         while i < MAX_PARENTS:
-            v = self._do_infra._read_pid_value(self.identifier, offset+i)
+            v = self._do_infra._read_pid_value(self.identifier, offset + i)
             if not v:
                 break
             parents.add(v[1])

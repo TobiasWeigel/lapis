@@ -429,8 +429,12 @@ class HandleInfrastructure(DOInfrastructure):
         """
         return self.prefix + "/" + suffix
     
-    def manufacture_hashmap(self, identifier):
+    def manufacture_hashmap(self, identifier, characteristic_segment_number):
         """
         Factory method. Constructs Handle-based Hashmap implementation objects.
+        
+        :identifier: The PID of the record that should hold the hash map.
+        :param: characteristic_segment_number: Since there can be multiple hash maps in a single record, this number
+          is used to separate them from each other. 
         """
-        return HandleHashmapImpl(self, identifier)
+        return HandleHashmapImpl(self, identifier, characteristic_segment_number)

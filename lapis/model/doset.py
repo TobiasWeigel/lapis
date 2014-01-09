@@ -54,9 +54,9 @@ class DigitalObjectSet(DigitalObject):
             return dobj
     
     def __init__(self, do_infrastructure, identifier, references = None, alias_identifiers = None):
-        super(DigitalObjectSet, self).__init__(do_infrastructure, identifier, references=references, alias_identifiers=alias_identifiers)
+        super(DigitalObjectSet, self).__init__(do_infrastructure, identifier, references = references, alias_identifiers=alias_identifiers)
         self.resource_type = DigitalObjectSet.RESOURCE_TYPE
-        self.__hashmap = self._do_infra.manufacture_hashmap(self._id)
+        self.__hashmap = self._do_infra.manufacture_hashmap(self._id, self.CHARACTERISTIC_SEGMENT_NUMBER)
                 
     def add_do(self, dobj):
         """
@@ -120,9 +120,6 @@ class DigitalObjectSet(DigitalObject):
         :return: an iterator object
         """
         for idx, v in self.__hashmap:
-            if idx < 1000:
-                # skip organizational values
-                continue
             dobj = self._do_infra.lookup_pid(v[1])
             yield dobj
     

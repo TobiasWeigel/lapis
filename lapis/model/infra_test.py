@@ -43,7 +43,7 @@ from lapis.model.do import DigitalObject, PropertyNameMismatchError
 from ConfigParser import ConfigParser
 from lapis.model.doset import DigitalObjectSet
 from lapis.model.dolist import DigitalObjectArray, DigitalObjectLinkedList
-from lapis.model.hashmap import INDEX_HASHMAP_SIZE
+from lapis.model.hashmap import BASE_INDEX_HASHMAP_SIZE
 
 TESTING_CONFIG_DEFAULTS = { "handle-prefix": "10876", "server-address": "handleoracle.dkrz.de", "server-port": 8090 }
 
@@ -273,7 +273,7 @@ class TestDOInfrastructure(unittest.TestCase):
         assert ele_set.num_set_elements() == 3
         # test prevention of property overwrite
         try:
-            ele_set.set_property_value(INDEX_HASHMAP_SIZE, "this_should_not_work", "value")
+            ele_set.set_property_value(BASE_INDEX_HASHMAP_SIZE + ele_set.CHARACTERISTIC_SEGMENT_NUMBER, "this_should_not_work", "value")
             self.fail("Successful overwrite of hashmap size through a property!")
         except PropertyNameMismatchError:
             pass

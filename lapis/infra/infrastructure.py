@@ -395,8 +395,8 @@ class InMemoryInfrastructure(DOInfrastructure):
             raise KeyError()
         return isinstance(ele, InMemoryInfrastructure.InMemoryElementAlias)
             
-    def manufacture_hashmap(self, identifier):
-        return HandleHashmapImpl(self, identifier)
+    def manufacture_hashmap(self, identifier, characteristic_segment_number):
+        return HandleHashmapImpl(self, identifier, characteristic_segment_number)
     
 class PIDAlreadyExistsError(Exception):
     """
