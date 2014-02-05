@@ -183,6 +183,11 @@ class DigitalObjectArray(DigitalObject):
                 return True
         return False
         
+    def __iter__(self):
+        raise NotImplementedError()
+
+
+
 class DigitalObjectLinkedList(DigitalObject):
 
     CHARACTERISTIC_SEGMENT_NUMBER = 4
@@ -481,3 +486,7 @@ class DigitalObjectLinkedList(DigitalObject):
         p, i = split_handle(p)
         return self._do_infra.lookup_pid(p), i
     
+    def __iter__(self):
+        raise NotImplementedError()
+        
+        

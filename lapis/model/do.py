@@ -161,7 +161,7 @@ class DigitalObject(object):
         if isinstance(reference, DigitalObject):
             ref = reference.identifier
         else:
-            if DigitalObject.is_PID(reference):
+            if DigitalObject.is_PID_name(reference):
                 # lookup PID to check for valid object, then use its identifier (which should be equal to reference)
                 ref = self._do_infra.lookup_pid(reference)
                 if not ref:
@@ -195,7 +195,7 @@ class DigitalObject(object):
         if isinstance(reference, DigitalObject):
             ref = reference.identifier
         else:
-            if DigitalObject.is_PID(reference):
+            if DigitalObject.is_PID_name(reference):
                 # lookup PID to check for valid object, then use its identifier (which should be equal to reference)
                 ref = self._do_infra.lookup_pid(reference)
                 ref = ref.identifier
@@ -284,9 +284,9 @@ class DigitalObject(object):
          
 
     @staticmethod
-    def is_PID(s):
+    def is_PID_name(s):
         """
-        Checks whether the given string looks like a syntactically valid PID.
+        Checks whether the given string looks like a syntactically valid PID name.
         
         Syntactically valid PIDs are described as::
         
@@ -315,14 +315,6 @@ class DigitalObject(object):
         """
         return list(self._alias_identifiers)
 
-    def get_superset_pids(self):
-        """
-        Returns a list with the PIDs of all DigitalObjectSets which this object is element of.
-        
-        :returns: A list (may be empty).
-        """
-        return self.get_reference_pids(REFERENCE_SUBELEMENT_OF)
-    
     def set_property_value(self, property_index, property_name, property_value):
         """
         Sets a property value (key-metadata). Properties can be freely defined by any method or user and do not have
