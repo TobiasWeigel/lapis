@@ -427,6 +427,12 @@ class TestHandleInfrastructure(TestDOInfrastructure):
         assert do != None
         self.created_pids.append(do.identifier)
         assert do.identifier == "%s/%sadditional_element_test" % (self.do_infra.prefix, self.do_infra.additional_identifier_element)
+        do = self.do_infra.lookup_pid(id1)
+        assert do != None
+        assert do.identifier == "%s/%sadditional_element_test" % (self.do_infra.prefix, self.do_infra.additional_identifier_element) 
+        do = self.do_infra.lookup_pid("%s/%sadditional_element_test" % (self.do_infra.prefix, self.do_infra.additional_identifier_element))
+        assert do != None
+        assert do.identifier == "%s/%sadditional_element_test" % (self.do_infra.prefix, self.do_infra.additional_identifier_element) 
         
 
 class TestPIDRegExp(unittest.TestCase):
