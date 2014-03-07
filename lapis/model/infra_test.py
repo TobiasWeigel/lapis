@@ -421,6 +421,12 @@ class TestHandleInfrastructure(TestDOInfrastructure):
             except IOError, exc:
                 self.logger.info("Could not delete test identifier %s" % dobj)
         
+    def test_additional_element(self):
+        id1 = "%s/additional_element_test" % self.do_infra.prefix
+        do = self.do_infra.create_do(id1)
+        assert do != None
+        self.created_pids.append(do.identifier)
+        assert do.identifier == "%s/%sadditional_element_test" % (self.do_infra.prefix, self.do_infra.additional_identifier_element)
         
 
 class TestPIDRegExp(unittest.TestCase):
