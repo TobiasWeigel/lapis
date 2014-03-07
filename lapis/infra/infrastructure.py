@@ -76,7 +76,7 @@ class DOInfrastructure(object):
             while not success:
                 id = self._generate_random_identifier()
                 try:
-                    self._acquire_pid(id)
+                    id = self._acquire_pid(id)
                     success = True
                 except PIDAlreadyExistsError:
                     success = False # re-generate random PID and retry

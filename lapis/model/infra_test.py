@@ -392,7 +392,7 @@ class TestHandleInfrastructure(TestDOInfrastructure):
         # test parameters
         host = TESTING_CONFIG_DEFAULTS["server-address"]
         port = TESTING_CONFIG_DEFAULTS["server-port"]
-        urlpath = "/handle/"
+        urlpath = "/handle-rest-0.1.1/"
         prefix = TESTING_CONFIG_DEFAULTS["handle-prefix"]
         additional_identifier_element = "infra-test/"
         # check for test config file
@@ -432,7 +432,13 @@ class TestHandleInfrastructure(TestDOInfrastructure):
         assert do.identifier == "%s/%sadditional_element_test" % (self.do_infra.prefix, self.do_infra.additional_identifier_element) 
         do = self.do_infra.lookup_pid("%s/%sadditional_element_test" % (self.do_infra.prefix, self.do_infra.additional_identifier_element))
         assert do != None
-        assert do.identifier == "%s/%sadditional_element_test" % (self.do_infra.prefix, self.do_infra.additional_identifier_element) 
+        assert do.identifier == "%s/%sadditional_element_test" % (self.do_infra.prefix, self.do_infra.additional_identifier_element)
+        # create DO using generated identifier name
+        do = self.do_infra.create_do()
+        assert do != None
+        self.created_pids.append(do.identifier)
+        print(do.identifier)
+        assert do.identifier.startswith(self.do_infra.prefix+"/"+self.do_infra.additional_identifier_element)
         
 
 class TestPIDRegExp(unittest.TestCase):
