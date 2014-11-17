@@ -17,10 +17,10 @@ however, we will use a proper Handle Server as the backend. ::
   prefix = "12345"
   do_infra = HandleInfrastructure(host, port, urlpath, prefix)  
   # now issue a Handle
-  my_digital_object = do_infra.create_do(prefix+"testhandle")
+  my_digital_object = do_infra.create_do(prefix+"/testhandle")
   my_digital_object.resource_location = "http://www.google.com"
   # lookup should also work
-  retrieved_object = do_infra.lookup_pid(prefix+"testhandle")
+  retrieved_object = do_infra.lookup_pid(prefix+"/testhandle")
   
 Note that the HandleInfrastructure class does not interact directly with a Handle Server, but requires a small servlet inbetween since
 the Handle System up to version 7 does not offer a HTTP/RESTful interface. A quick and dirty implementation of such a minimal
@@ -29,16 +29,16 @@ service servlet can be found here: https://github.com/TobiasWeigel/handle-rest
 To work with collections, we simply specify an optional parameter to create_do, which effectively expresses a factory pattern. ::
 
   # create a set and add an element
-  my_set = do_infra.create_do(prefix+"myset", DigitalObjectSet)
+  my_set = do_infra.create_do(prefix+"/myset", DigitalObjectSet)
   my_set.add_do(my_digital_object)
   # create an array and add an element
-  my_array = do_infra.create_do(prefix+"myarray", DigitalObjectArray)
+  my_array = do_infra.create_do(prefix+"/myarray", DigitalObjectArray)
   my_array.add_do(my_digital_object)
   # create a linked list and add an element
-  my_linkedlist = do_infra.create_do(prefix+"mylinkedlist", DigitalObjectLinkedList)
+  my_linkedlist = do_infra.create_do(prefix+"/mylinkedlist", DigitalObjectLinkedList)
   my_linkedlist.add_do(my_digital_object)
   # retrieve a set and iterate
-  retrieved_set = do_infra.lookup_pid(prefix+"myset")
+  retrieved_set = do_infra.lookup_pid(prefix+"/myset")
   assert isinstance(retrieved_set, DigitalObjectSet)   # should pass
   # print element PIDs
   num_subele = 0
