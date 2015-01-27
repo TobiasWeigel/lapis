@@ -45,7 +45,7 @@ from lapis.model.doset import DigitalObjectSet
 from lapis.model.dolist import DigitalObjectArray, DigitalObjectLinkedList
 from lapis.model.hashmap import BASE_INDEX_HASHMAP_SIZE
 
-TESTING_CONFIG_DEFAULTS = { "handle-prefix": "10876", "server-address": "handleoracle.dkrz.de", "server-port": 8090 }
+TESTING_CONFIG_DEFAULTS = { "handle-prefix": "10876.test", "server-address": "handle8.dkrz.de", "server-port": 443 }
 
 logger = logging.getLogger(__name__)
 
@@ -392,9 +392,12 @@ class TestHandleInfrastructure(TestDOInfrastructure):
         # test parameters
         host = TESTING_CONFIG_DEFAULTS["server-address"]
         port = TESTING_CONFIG_DEFAULTS["server-port"]
-        urlpath = "/handle-rest-0.1.1/"
+        urlpath = "/api/handles/"
         prefix = TESTING_CONFIG_DEFAULTS["handle-prefix"]
-        additional_identifier_element = "infra-test/"
+        additional_identifier_element = ""
+        user = ""
+        password = ""
+        user_index = "300"
         # check for test config file
         cfgparse = ConfigParser()
         if cfgparse.read(("testing-config.cfg", os.environ["HOME"]+"/testing-config.cfg")):
@@ -402,12 +405,15 @@ class TestHandleInfrastructure(TestDOInfrastructure):
             if cfgparse.has_option("server", "host"): host = cfgparse.get("server", "host")
             if cfgparse.has_option("server", "port"): port = cfgparse.getint("server", "port")
             if cfgparse.has_option("server", "path"): urlpath = cfgparse.get("server", "path")
+            if cfgparse.has_option("server", "user"): user = cfgparse.get("server", "user")
+            if cfgparse.has_option("server", "user_index"): user_index = cfgparse.get("server", "user_index")
+            if cfgparse.has_option("server", "password"): password = cfgparse.get("server", "password")
             if cfgparse.has_option("handle", "prefix"): prefix = cfgparse.get("handle", "prefix")
             if cfgparse.has_option("handle", "additionalelement"): additional_identifier_element = cfgparse.get("handle", "additionalelement")
         # now create infra instance
         logger.info("Running tests with following parameters:")
-        logger.info("Host: %s, Port: %s, URL path: %s, prefix: %s, additional element: %s" % (host, port, urlpath, prefix, additional_identifier_element))
-        self.do_infra = HandleInfrastructure(host, port, urlpath, prefix=prefix, additional_identifier_element=additional_identifier_element)
+        logger.info("Host: %s, Port: %s, User: %s, User index: %s, URL path: %s, prefix: %s, additional element: %s" % (host, port, user, user_index, urlpath, prefix, additional_identifier_element))
+        self.do_infra = HandleInfrastructure(host, port, user, user_index, password, urlpath, prefix=prefix, additional_identifier_element=additional_identifier_element)
         
         
     def tearDown(self):
