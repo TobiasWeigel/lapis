@@ -398,6 +398,7 @@ class TestHandleInfrastructure(TestDOInfrastructure):
         user = ""
         password = ""
         user_index = "300"
+        unsafe_ssl = False
         # check for test config file
         cfgparse = ConfigParser()
         if cfgparse.read(("testing-config.cfg", os.environ["HOME"]+"/testing-config.cfg")):
@@ -408,12 +409,13 @@ class TestHandleInfrastructure(TestDOInfrastructure):
             if cfgparse.has_option("server", "user"): user = cfgparse.get("server", "user")
             if cfgparse.has_option("server", "user_index"): user_index = cfgparse.get("server", "user_index")
             if cfgparse.has_option("server", "password"): password = cfgparse.get("server", "password")
+            if cfgparse.has_option("server", "unsafe_ssl"): unsafe_ssl = cfgparse.getboolean("server", "unsafe_ssl")
             if cfgparse.has_option("handle", "prefix"): prefix = cfgparse.get("handle", "prefix")
             if cfgparse.has_option("handle", "additionalelement"): additional_identifier_element = cfgparse.get("handle", "additionalelement")
         # now create infra instance
         logger.info("Running tests with following parameters:")
-        logger.info("Host: %s, Port: %s, User: %s, User index: %s, URL path: %s, prefix: %s, additional element: %s" % (host, port, user, user_index, urlpath, prefix, additional_identifier_element))
-        self.do_infra = HandleInfrastructure(host, port, user, user_index, password, urlpath, prefix=prefix, additional_identifier_element=additional_identifier_element)
+        logger.info("Host: %s, Port: %s, User: %s, User index: %s, URL path: %s, prefix: %s, additional element: %s, unsafe_ssl: %s" % (host, port, user, user_index, urlpath, prefix, additional_identifier_element, unsafe_ssl))
+        self.do_infra = HandleInfrastructure(host, port, user, user_index, password, urlpath, prefix=prefix, additional_identifier_element=additional_identifier_element, unsafe_ssl=unsafe_ssl)
         
         
     def tearDown(self):

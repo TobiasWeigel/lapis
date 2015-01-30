@@ -30,12 +30,12 @@ The views and conclusions contained in the software and documentation are those
 of the authors.
 '''
 from lapis.infra.infrastructure import DOInfrastructure, PIDAlreadyExistsError, PIDAliasBrokenError
-from httplib import HTTPSConnection
 from lapis.model.do import DigitalObject
 from lapis.model.doset import DigitalObjectSet
 from lapis.model.hashmap import HandleHashmapImpl
 from lapis.model.dolist import DigitalObjectArray, DigitalObjectLinkedList
 from base64 import b64encode
+from urllib3 import HTTPSConnectionPool, disable_warnings
 import logging
 
 try:
@@ -76,7 +76,7 @@ class HandleInfrastructure(DOInfrastructure):
     """ 
     
     
-    def __init__(self, host, port, user, user_index, password, path, prefix = None, additional_identifier_element = None):
+    def __init__(self, host, port, user, user_index, password, path, prefix = None, additional_identifier_element = None, unsafe_ssl=False):
         '''
         Constructor.
         
@@ -91,6 +91,11 @@ class HandleInfrastructure(DOInfrastructure):
         self.port = port
         self.path = path
         self.prefix = prefix
+        if unsafe_ssl:
+            disable_warnings()
+            self.connpool = HTTPSConnectionPool(host, port=port, assert_hostname=False, cert_reqs="CERT_NONE")
+        else:
+            self.connpool = HTTPSConnectionPool(host, port=port)
         self.user_handle = prefix+"/"+user
         self.user_index = user_index
         self.authstring = b64encode(user_index+"%3A"+prefix+"/"+user+":"+password)
@@ -99,9 +104,6 @@ class HandleInfrastructure(DOInfrastructure):
             self.path = self.path + "/"
         self.additional_identifier_element = additional_identifier_element
             
-    def __create_http_connection(self):
-        return HTTPSConnection(self.host, self.port, strict=False)
-    
     def _generate_random_identifier(self):
         if not self.prefix:
             raise ValueError("Cannot generate random Handles if no prefix is provided!")
@@ -128,21 +130,17 @@ class HandleInfrastructure(DOInfrastructure):
         return {"index":100,"type":"HS_ADMIN","data":{"format":"admin","value":{"handle":self.user_handle,"index":self.user_index,"permissions":"011111110011"}}}
     
     def _acquire_pid(self, identifier):
-        http = self.__create_http_connection()
         path, identifier_prep = self._prepare_identifier(identifier)
         # check for existing Handle
-        http.request("GET", path, None, self.http_headers)
-        resp = http.getresponse()
+        resp = self.connpool.request("GET", path, None, self.http_headers)
         if (resp.status == 200):
             # Handle already exists
             raise PIDAlreadyExistsError("Handle already exists: %s" % identifier_prep)
         if (resp.status != 404):
             raise IOError("Failed to check for existing Handle %s (HTTP Code %s): %s" % (identifier_prep, resp.status, resp.reason))
         # Handle does not exist, so we can safely create it
-        http = self.__create_http_connection()
         values = {"values": [self.__generate_admin_value()]}
-        http.request("PUT", path, str(values), self.http_headers)
-        resp = http.getresponse()
+        resp = self.connpool.urlopen("PUT", path, str(values), self.http_headers)
         if not(200 <= resp.status <= 299):
             raise IOError("Could not create Handle %s: %s" % (identifier_prep, resp.reason))
         return identifier_prep
@@ -194,10 +192,8 @@ class HandleInfrastructure(DOInfrastructure):
     def lookup_pid(self, identifier):
         aliases = []
         while True:
-            http = self.__create_http_connection()
             path, identifier = self._prepare_identifier(identifier)
-            http.request("GET", path, None, self.http_headers)
-            resp = http.getresponse()
+            resp = self.connpool.request("GET", path, None, self.http_headers)
             if resp.status == 404:
                 # Handle not found
                 if len(aliases) > 0:
@@ -207,7 +203,7 @@ class HandleInfrastructure(DOInfrastructure):
                 raise IOError("Failed to look up Handle %s due to the following reason (HTTP Code %s): %s" % (identifier, resp.status, resp.reason))
             else:
                 # check for HS_ALIAS redirect
-                piddata = json.load(resp)
+                piddata = json.loads(resp.data)
                 isa, alias_id = self._check_json_for_alias(piddata)
                 if isa:
                     # write down alias identifier and redo lookup with target identifier
@@ -268,11 +264,9 @@ class HandleInfrastructure(DOInfrastructure):
         if type(index) is not int:
             raise ValueError("Index must be an integer! (was: type %s, value %s)" % (type(index), index))
         # write the raw (index, type, value) triple
-        http = self.__create_http_connection()
         # TODO FIXME: index should not be set to 100; this is a workaround for a bug in the HSv8 beta
         data = json.dumps([{"index": index, "type": valuetype, "data": {"format": "string", "value": value}}])
-        http.request("PUT", path+"?index=%s" % 100, data, self.http_headers)
-        resp = http.getresponse()
+        resp = self.connpool.urlopen("PUT", path+"?index=%s" % 100, data, self.http_headers)
         if not(200 <= resp.status <= 299):
             raise IOError("Could not write raw value to Handle %s: %s" % (identifier, resp.reason))
     
@@ -287,15 +281,13 @@ class HandleInfrastructure(DOInfrastructure):
         if type(index) is not int:
             raise ValueError("Index must be an integer! (was: type %s, value %s)" % (type(index), index))
         # read only the given index
-        http = self.__create_http_connection()
-        http.request("GET", path+"?index=%s" % index, "", self.http_headers)
-        resp = http.getresponse()
+        resp = self.connpool.request("GET", path+"?index=%s" % index, "", self.http_headers)
         if resp.status == 404:
             # value not found; the Handle may exist, but the index is unused
             return None        
         if not(200 <= resp.status <= 299):
             raise IOError("Could not read raw value from Handle %s: %s" % (identifier, resp.reason))
-        respdata = json.load(resp)
+        respdata = json.loads(resp.data)
         if not "values" in respdata:
             raise IOError("Illegal format of JSON response from Handle server: 'values' not found in JSON record!")
         for ele in respdata["values"]:
@@ -313,9 +305,7 @@ class HandleInfrastructure(DOInfrastructure):
         if type(index) is not int:
             raise ValueError("Index must be an integer! (was: type %s, value %s)" % (type(index), index))
         # read only the given index
-        http = self.__create_http_connection()
-        http.request("DELETE", path+"?index=%s" % index, "", self.http_headers)
-        resp = http.getresponse()
+        resp = self.connpool.urlopen("DELETE", path+"?index=%s" % index, "", self.http_headers)
         if not(200 <= resp.status <= 299):
             raise IOError("Could not remove raw value from Handle %s: %s" % (identifier, resp.reason))
 
@@ -327,12 +317,10 @@ class HandleInfrastructure(DOInfrastructure):
         """
         path, identifier = self._prepare_identifier(identifier)
         # read full record
-        http = self.__create_http_connection()
-        http.request("GET", path, "", self.http_headers)
-        resp = http.getresponse()
+        resp = self.connpool.request("GET", path, "", self.http_headers)
         if not(200 <= resp.status <= 299):
             raise IOError("Could not read raw values from Handle %s: %s" % (identifier, resp.reason))
-        respdata = json.load(resp)
+        respdata = json.loads(resp.data)
         res = {}
         if not "values" in respdata:
             raise IOError("Illegal format of JSON response from Handle server: 'values' not found in JSON record!")
@@ -341,7 +329,6 @@ class HandleInfrastructure(DOInfrastructure):
         return res
     
     def _write_resource_information(self, identifier, resource_location, resource_type=None):
-        http = self.__create_http_connection()
         path, identifier = self._prepare_identifier(identifier)
         handle_values = []
         if resource_location:
@@ -349,39 +336,32 @@ class HandleInfrastructure(DOInfrastructure):
         if resource_type:
             handle_values.append({"index": INDEX_RESOURCE_TYPE, "type": "", "data": {"format": "string", "value": resource_type}})
         data = json.dumps(handle_values)
-        http.request("PUT", path, data, self.http_headers)
-        resp = http.getresponse()
+        resp = self.connpool.urlopen("PUT", path, data, self.http_headers)
         if not(200 <= resp.status <= 299):
             raise IOError("Could not write resource location to Handle %s: %s" % (identifier, resp.reason))
 
     def delete_do(self, identifier):
-        http = self.__create_http_connection()
         path, identifier = self._prepare_identifier(identifier)
-        http.request("DELETE", path, headers=self.http_headers)
-        resp = http.getresponse()
+        resp = self.connpool.urlopen("DELETE", path, headers=self.http_headers)
         if resp.status == 404:
             raise KeyError("Handle not found: %s" % identifier)
         if not(200 <= resp.status <= 299):
             raise IOError("Could not delete Handle %s: %s" % (identifier, resp.reason))
 
     def _write_reference(self, identifier, key, reference):
-        http = self.__create_http_connection()
         path, identifier = self._prepare_identifier(identifier)
         # first, we need to determine the index to use by looking at the key
-        http.request("GET", path, headers=self.http_headers)
-        resp = http.getresponse()
+        resp = self.connpool.request("GET", path, headers=self.http_headers)
         if not(200 <= resp.status <= 299):
             raise IOError("Unknown Handle: %s" % identifier)
-        dodata = json.load(resp)
+        dodata = json.loads(resp.data)
         index = self._determine_index(identifier, dodata, key, REFERENCE_INDEX_START, REFERENCE_INDEX_END)
         # now we can write the reference; note that reference may be a list. But this is okay, we
         # convert it to a string and take care of reconversion in the JSON-to-DO method
-        http = self.__create_http_connection()
         reference_s = json.dumps(reference)
         # TODO FIXME: index should not be set to 100; this is a workaround for a bug in the HSv8 beta
         data = json.dumps({"values": [{"index": index, "type": key, "data": {"format": "string", "value": reference_s}}]})
-        http.request("PUT", path+"?index=%s" % 100, data, self.http_headers)
-        resp = http.getresponse()
+        resp = self.connpool.urlopen("PUT", path+"?index=%s" % 100, data, self.http_headers)
         if not(200 <= resp.status <= 299):
             raise IOError("Could not write references to Handle %s: %s" % (identifier, resp.reason))
             
@@ -391,21 +371,17 @@ class HandleInfrastructure(DOInfrastructure):
             original_identifier = original.identifier
         else: 
             original_identifier = str(original)
-        http = self.__create_http_connection()
         path, identifier = self._prepare_identifier(alias_identifier)
         # check for existing Handle
-        http.request("GET", path, None, self.http_headers)
-        resp = http.getresponse()
+        resp = self.connpool.request("GET", path, None, self.http_headers)
         if (resp.status == 200):
             # Handle already exists
             raise PIDAlreadyExistsError("Handle already exists, cannot use it as an alias: %s" % identifier)
         if (resp.status != 404):
             raise IOError("Failed to check for existing Handle %s (HTTP Code %s): %s" % (identifier, resp.status, resp.reason))
         # okay, alias is available. Now create it.
-        http = self.__create_http_connection()
         values = {"values": [self.__generate_admin_value(), {"index": 1, "type": "HS_ALIAS", "data": {"format": "string", "value": str(original_identifier)}}]}
-        http.request("PUT", path, str(values), self.http_headers)
-        resp = http.getresponse()
+        resp = self.connpool.urlopen("PUT", path, str(values), self.http_headers)
         if not(200 <= resp.status <= 299):
             raise IOError("Could not create Alias Handle %s: %s" % (identifier, resp.reason))
         return identifier
@@ -419,16 +395,14 @@ class HandleInfrastructure(DOInfrastructure):
         return True
     
     def is_alias(self, alias_identifier):
-        http = self.__create_http_connection()
         path, identifier = self._prepare_identifier(alias_identifier)
-        http.request("GET", path, None, self.http_headers)
-        resp = http.getresponse()
+        resp = self.connpool.request("GET", path, None, self.http_headers)
         if resp.status == 404:
             raise KeyError("Handle not found: %s" % identifier)
         if not(200 <= resp.status <= 299):
             raise IOError("Failed to lookup Handle %s for alias check: %s" % (identifier, resp.reason))
         # parse JSON, but do not create a Digital Object instance, as this might cause inefficient subsequent calls
-        isa, a_id = self._check_json_for_alias(json.load(resp))
+        isa, a_id = self._check_json_for_alias(json.loads(resp.data))
         return isa
 
     def _check_json_for_alias(self, piddata):
