@@ -264,9 +264,8 @@ class HandleInfrastructure(DOInfrastructure):
         if type(index) is not int:
             raise ValueError("Index must be an integer! (was: type %s, value %s)" % (type(index), index))
         # write the raw (index, type, value) triple
-        # TODO FIXME: index should not be set to 100; this is a workaround for a bug in the HSv8 beta
         data = json.dumps([{"index": index, "type": valuetype, "data": {"format": "string", "value": value}}])
-        resp = self.connpool.urlopen("PUT", path+"?index=%s" % 100, data, self.http_headers)
+        resp = self.connpool.urlopen("PUT", path+"?index=various", data, self.http_headers)
         if not(200 <= resp.status <= 299):
             raise IOError("Could not write raw value to Handle %s: %s" % (identifier, resp.reason))
     
@@ -359,9 +358,8 @@ class HandleInfrastructure(DOInfrastructure):
         # now we can write the reference; note that reference may be a list. But this is okay, we
         # convert it to a string and take care of reconversion in the JSON-to-DO method
         reference_s = json.dumps(reference)
-        # TODO FIXME: index should not be set to 100; this is a workaround for a bug in the HSv8 beta
         data = json.dumps({"values": [{"index": index, "type": key, "data": {"format": "string", "value": reference_s}}]})
-        resp = self.connpool.urlopen("PUT", path+"?index=%s" % 100, data, self.http_headers)
+        resp = self.connpool.urlopen("PUT", path+"?index=various", data, self.http_headers)
         if not(200 <= resp.status <= 299):
             raise IOError("Could not write references to Handle %s: %s" % (identifier, resp.reason))
             
