@@ -131,16 +131,12 @@ class HandleInfrastructure(DOInfrastructure):
     
     def _acquire_pid(self, identifier):
         path, identifier_prep = self._prepare_identifier(identifier)
-        # check for existing Handle
-        resp = self.connpool.request("GET", path, None, self.http_headers)
-        if (resp.status == 200):
-            # Handle already exists
-            raise PIDAlreadyExistsError("Handle already exists: %s" % identifier_prep)
-        if (resp.status != 404):
-            raise IOError("Failed to check for existing Handle %s (HTTP Code %s): %s" % (identifier_prep, resp.status, resp.reason))
-        # Handle does not exist, so we can safely create it
+        # Try to create Handle, but do not ovewrite existing
         values = {"values": [self.__generate_admin_value()]}
-        resp = self.connpool.urlopen("PUT", path, str(values), self.http_headers)
+        resp = self.connpool.urlopen("PUT", path+"?overwrite=false", str(values), self.http_headers)
+        # status check; 409 = Conflict on existing Handle
+        if (resp.status == 409):
+            raise PIDAlreadyExistsError("Handle already exists: %s" % identifier_prep)
         if not(200 <= resp.status <= 299):
             raise IOError("Could not create Handle %s: %s" % (identifier_prep, resp.reason))
         return identifier_prep
