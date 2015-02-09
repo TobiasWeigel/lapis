@@ -79,12 +79,19 @@ class HandleInfrastructure(DOInfrastructure):
     def __init__(self, host, port, user, user_index, password, path, prefix = None, additional_identifier_element = None, unsafe_ssl=False):
         '''
         Constructor.
-        
-        :param _prefix: The Handle _prefix to use (without trailing slash). If not given, all operations will work
-          nonetheless, except for random handle creation. Note that setting a _prefix does not mean that identifier 
-          strings can omit it - all identifiers must ALWAYS include the _prefix, no matter what.
-        :param _additional_identifier_element: A string that is inserted inbetween Handle _prefix and suffix, e.g. if set
+
+        :param host: Host name of the Handle server.
+        :param port: Port for the Handle server, usually 443 or 8443.
+        :param user: Full user Handle name to authenticate for administrative permissions for modifying Handles. The full user name will usually be of the form 'prefix/suffix'.
+        :param user_index: The index to use within the user Handle.
+        :param password: The user password.
+        :param path: The server path for the API endpoint, e.g. 'api/handles'. Does not include the host name.
+        :param prefix: The Handle prefix to use (without trailing slash). If not given, all operations will work
+          nonetheless, except for random handle creation. Note that setting a prefix does not mean that identifier 
+          strings can omit it - all identifiers must ALWAYS include the prefix, no matter what.
+        :param additional_identifier_element: A string that is inserted inbetween Handle prefix and suffix, e.g. if set
           to "test-", 10876/identifier becomes 10876/test-identifier.
+        :unsafe_ssl: If set to True, SSL certificate warnings will be ignored. Do not activate this in productive environments!
         '''
         super(HandleInfrastructure, self).__init__()
         self._host = host
@@ -98,7 +105,7 @@ class HandleInfrastructure(DOInfrastructure):
             self.__connpool = HTTPSConnectionPool(host, port=port)
         self.__user_handle = prefix+"/"+user
         self.__user_index = user_index
-        self.__authstring = b64encode(user_index+"%3A"+prefix+"/"+user+":"+password)
+        self.__authstring = b64encode(user_index+"%3A"+user+":"+password)
         self.__http_headers = {"Content-Type": "application/json", "Authorization": "Basic %s" % self.__authstring}
         if not self._path.endswith("/"):
             self._path = self._path + "/"

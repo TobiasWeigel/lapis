@@ -79,7 +79,7 @@ class DigitalObject(object):
         infrastructure, no resource location or object-type entries should be given in the annotations dict. Also note
         that the annotations dict is assigned directly, not copied.
         :param resource_location: The resource location of the Digital Object's data, in case of external data.
-        :param _resource_type: The resource type for external data. Note that resource_location and _resource_type are not
+        :param resource_type: The resource type for external data. Note that resource_location and resource_type are not
           checked for consistency by the constructor. It is the caller's task to provide meaningful values.
         :param references: The references of this instance to other Digital Objects. As with annotations, this is a dict
           that is assigned directly, not copied.
