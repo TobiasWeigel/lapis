@@ -55,7 +55,7 @@ class DigitalObjectSet(DigitalObject):
     
     def __init__(self, do_infrastructure, identifier, references = None, alias_identifiers = None):
         super(DigitalObjectSet, self).__init__(do_infrastructure, identifier, references = references, alias_identifiers=alias_identifiers)
-        self.resource_type = DigitalObjectSet.RESOURCE_TYPE
+        self._resource_type = DigitalObjectSet.RESOURCE_TYPE
         self.__hashmap = self._do_infra.manufacture_hashmap(self._id, self.CHARACTERISTIC_SEGMENT_NUMBER)
                 
     def add_do(self, dobj):

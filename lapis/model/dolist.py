@@ -60,7 +60,7 @@ class DigitalObjectArray(DigitalObject):
 
     def __init__(self, do_infrastructure, identifier, references = None, alias_identifiers = None):
         super(DigitalObjectArray, self).__init__(do_infrastructure, identifier, references=references, alias_identifiers=alias_identifiers)
-        self.resource_type = DigitalObjectArray.RESOURCE_TYPE
+        self._resource_type = DigitalObjectArray.RESOURCE_TYPE
         # check and init array size
         if not self._do_infra._read_pid_value(self._id, self.INDEX_ARRAY_SIZE):
             self._do_infra._write_pid_value(self._id, self.INDEX_ARRAY_SIZE, self.VALUETYPE_ARRAY_SIZE, 0)
@@ -206,7 +206,7 @@ class DigitalObjectLinkedList(DigitalObject):
     
     def __init__(self, do_infrastructure, identifier, references = None, alias_identifiers = None):
         super(DigitalObjectLinkedList, self).__init__(do_infrastructure, identifier, references=references, alias_identifiers=alias_identifiers)
-        self.resource_type = self.RESOURCE_TYPE
+        self._resource_type = self.RESOURCE_TYPE
         # check and init array size
         if not self._do_infra._read_pid_value(self._id, self.INDEX_LINKED_LIST_SIZE):
             self._do_infra._write_pid_value(self._id, self.INDEX_LINKED_LIST_SIZE, self.VALUETYPE_LINKED_LIST_SIZE, 0)

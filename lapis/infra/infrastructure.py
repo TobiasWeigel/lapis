@@ -254,7 +254,7 @@ class InMemoryInfrastructure(DOInfrastructure):
             itself!
             """
             self._resource_location = do.resource_location
-            self._resource_type = do.resource_type
+            self._resource_type = do._resource_type
             self._references = {}
             for k in do.iter_reference_keys():
                 self._references[k] = do.get_references(k)

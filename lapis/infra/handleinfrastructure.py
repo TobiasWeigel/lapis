@@ -80,61 +80,61 @@ class HandleInfrastructure(DOInfrastructure):
         '''
         Constructor.
         
-        :param prefix: The Handle prefix to use (without trailing slash). If not given, all operations will work
-          nonetheless, except for random handle creation. Note that setting a prefix does not mean that identifier 
-          strings can omit it - all identifiers must ALWAYS include the prefix, no matter what.
-        :param additional_identifier_element: A string that is inserted inbetween Handle prefix and suffix, e.g. if set
+        :param _prefix: The Handle _prefix to use (without trailing slash). If not given, all operations will work
+          nonetheless, except for random handle creation. Note that setting a _prefix does not mean that identifier 
+          strings can omit it - all identifiers must ALWAYS include the _prefix, no matter what.
+        :param _additional_identifier_element: A string that is inserted inbetween Handle _prefix and suffix, e.g. if set
           to "test-", 10876/identifier becomes 10876/test-identifier.
         '''
         super(HandleInfrastructure, self).__init__()
-        self.host = host
-        self.port = port
-        self.path = path
-        self.prefix = prefix
+        self._host = host
+        self._port = port
+        self._path = path
+        self._prefix = prefix
         if unsafe_ssl:
             disable_warnings()
-            self.connpool = HTTPSConnectionPool(host, port=port, assert_hostname=False, cert_reqs="CERT_NONE")
+            self.__connpool = HTTPSConnectionPool(host, port=port, assert_hostname=False, cert_reqs="CERT_NONE")
         else:
-            self.connpool = HTTPSConnectionPool(host, port=port)
-        self.user_handle = prefix+"/"+user
-        self.user_index = user_index
-        self.authstring = b64encode(user_index+"%3A"+prefix+"/"+user+":"+password)
-        self.http_headers = {"Content-Type": "application/json", "Authorization": "Basic %s" % self.authstring}
-        if not self.path.endswith("/"):
-            self.path = self.path + "/"
-        self.additional_identifier_element = additional_identifier_element
+            self.__connpool = HTTPSConnectionPool(host, port=port)
+        self.__user_handle = prefix+"/"+user
+        self.__user_index = user_index
+        self.__authstring = b64encode(user_index+"%3A"+prefix+"/"+user+":"+password)
+        self.__http_headers = {"Content-Type": "application/json", "Authorization": "Basic %s" % self.__authstring}
+        if not self._path.endswith("/"):
+            self._path = self._path + "/"
+        self._additional_identifier_element = additional_identifier_element
             
     def _generate_random_identifier(self):
-        if not self.prefix:
-            raise ValueError("Cannot generate random Handles if no prefix is provided!")
+        if not self._prefix:
+            raise ValueError("Cannot generate random Handles if no _prefix is provided!")
         rid = super(HandleInfrastructure, self)._generate_random_identifier()
-        return self.prefix+"/"+rid
+        return self._prefix+"/"+rid
 
     def _prepare_identifier(self, identifier):
         # check identifier string for validity
         if " " in identifier:
             raise ValueError("Illegal Handle identifier string character; spaces are not supported! (identifier: %s)" % identifier)
         identifier = identifier.strip()
-        if (self.additional_identifier_element):
-            # split identifier into prefix and suffix, insert additional element inbetween 
+        if (self._additional_identifier_element):
+            # split identifier into _prefix and suffix, insert additional element inbetween 
             parts = identifier.split("/", 1)
             if len(parts) != 2:
-                raise ValueError("Invalid identifier - no separating slash between prefix and suffix: %s" % identifier)
-            if (parts[1].startswith(self.additional_identifier_element)):
-                return self.path+identifier, identifier
-            newident = parts[0]+"/"+self.additional_identifier_element+parts[1]
-            return self.path+newident, newident
+                raise ValueError("Invalid identifier - no separating slash between _prefix and suffix: %s" % identifier)
+            if (parts[1].startswith(self._additional_identifier_element)):
+                return self._path+identifier, identifier
+            newident = parts[0]+"/"+self._additional_identifier_element+parts[1]
+            return self._path+newident, newident
         else:
-            return self.path+identifier, identifier
+            return self._path+identifier, identifier
     
     def __generate_admin_value(self):
-        return {"index":100,"type":"HS_ADMIN","data":{"format":"admin","value":{"handle":self.user_handle,"index":self.user_index,"permissions":"011111110011"}}}
+        return {"index":100,"type":"HS_ADMIN","data":{"format":"admin","value":{"handle":self.__user_handle,"index":self.__user_index,"permissions":"011111110011"}}}
     
     def _acquire_pid(self, identifier):
         path, identifier_prep = self._prepare_identifier(identifier)
         # Try to create Handle, but do not ovewrite existing
         values = {"values": [self.__generate_admin_value()]}
-        resp = self.connpool.urlopen("PUT", path+"?overwrite=false", str(values), self.http_headers)
+        resp = self.__connpool.urlopen("PUT", path+"?overwrite=false", str(values), self.__http_headers)
         # status check; 409 = Conflict on existing Handle
         if (resp.status == 409):
             raise PIDAlreadyExistsError("Handle already exists: %s" % identifier_prep)
@@ -190,7 +190,7 @@ class HandleInfrastructure(DOInfrastructure):
         aliases = []
         while True:
             path, identifier = self._prepare_identifier(identifier)
-            resp = self.connpool.request("GET", path, None, self.http_headers)
+            resp = self.__connpool.request("GET", path, None, self.__http_headers)
             if resp.status == 404:
                 # Handle not found
                 if len(aliases) > 0:
@@ -262,7 +262,7 @@ class HandleInfrastructure(DOInfrastructure):
             raise ValueError("Index must be an integer! (was: type %s, value %s)" % (type(index), index))
         # write the raw (index, type, value) triple
         data = json.dumps([{"index": index, "type": valuetype, "data": {"format": "string", "value": value}}])
-        resp = self.connpool.urlopen("PUT", path+"?index=various", data, self.http_headers)
+        resp = self.__connpool.urlopen("PUT", path+"?index=various", data, self.__http_headers)
         if not(200 <= resp.status <= 299):
             raise IOError("Could not write raw value to Handle %s: %s" % (identifier, resp.reason))
     
@@ -277,7 +277,7 @@ class HandleInfrastructure(DOInfrastructure):
         if type(index) is not int:
             raise ValueError("Index must be an integer! (was: type %s, value %s)" % (type(index), index))
         # read only the given index
-        resp = self.connpool.request("GET", path+"?index=%s" % index, "", self.http_headers)
+        resp = self.__connpool.request("GET", path+"?index=%s" % index, "", self.__http_headers)
         if resp.status == 404:
             # value not found; the Handle may exist, but the index is unused
             return None        
@@ -301,7 +301,7 @@ class HandleInfrastructure(DOInfrastructure):
         if type(index) is not int:
             raise ValueError("Index must be an integer! (was: type %s, value %s)" % (type(index), index))
         # read only the given index
-        resp = self.connpool.urlopen("DELETE", path+"?index=%s" % index, "", self.http_headers)
+        resp = self.__connpool.urlopen("DELETE", path+"?index=%s" % index, "", self.__http_headers)
         if not(200 <= resp.status <= 299):
             raise IOError("Could not remove raw value from Handle %s: %s" % (identifier, resp.reason))
 
@@ -313,7 +313,7 @@ class HandleInfrastructure(DOInfrastructure):
         """
         path, identifier = self._prepare_identifier(identifier)
         # read full record
-        resp = self.connpool.request("GET", path, "", self.http_headers)
+        resp = self.__connpool.request("GET", path, "", self.__http_headers)
         if not(200 <= resp.status <= 299):
             raise IOError("Could not read raw values from Handle %s: %s" % (identifier, resp.reason))
         respdata = json.loads(resp.data)
@@ -332,13 +332,13 @@ class HandleInfrastructure(DOInfrastructure):
         if resource_type:
             handle_values.append({"index": INDEX_RESOURCE_TYPE, "type": "", "data": {"format": "string", "value": resource_type}})
         data = json.dumps(handle_values)
-        resp = self.connpool.urlopen("PUT", path, data, self.http_headers)
+        resp = self.__connpool.urlopen("PUT", path, data, self.__http_headers)
         if not(200 <= resp.status <= 299):
             raise IOError("Could not write resource location to Handle %s: %s" % (identifier, resp.reason))
 
     def delete_do(self, identifier):
         path, identifier = self._prepare_identifier(identifier)
-        resp = self.connpool.urlopen("DELETE", path, headers=self.http_headers)
+        resp = self.__connpool.urlopen("DELETE", path, headers=self.__http_headers)
         if resp.status == 404:
             raise KeyError("Handle not found: %s" % identifier)
         if not(200 <= resp.status <= 299):
@@ -347,7 +347,7 @@ class HandleInfrastructure(DOInfrastructure):
     def _write_reference(self, identifier, key, reference):
         path, identifier = self._prepare_identifier(identifier)
         # first, we need to determine the index to use by looking at the key
-        resp = self.connpool.request("GET", path, headers=self.http_headers)
+        resp = self.__connpool.request("GET", path, headers=self.__http_headers)
         if not(200 <= resp.status <= 299):
             raise IOError("Unknown Handle: %s" % identifier)
         dodata = json.loads(resp.data)
@@ -356,7 +356,7 @@ class HandleInfrastructure(DOInfrastructure):
         # convert it to a string and take care of reconversion in the JSON-to-DO method
         reference_s = json.dumps(reference)
         data = json.dumps({"values": [{"index": index, "type": key, "data": {"format": "string", "value": reference_s}}]})
-        resp = self.connpool.urlopen("PUT", path+"?index=various", data, self.http_headers)
+        resp = self.__connpool.urlopen("PUT", path+"?index=various", data, self.__http_headers)
         if not(200 <= resp.status <= 299):
             raise IOError("Could not write references to Handle %s: %s" % (identifier, resp.reason))
             
@@ -368,7 +368,7 @@ class HandleInfrastructure(DOInfrastructure):
             original_identifier = str(original)
         path, identifier = self._prepare_identifier(alias_identifier)
         # check for existing Handle
-        resp = self.connpool.request("GET", path, None, self.http_headers)
+        resp = self.__connpool.request("GET", path, None, self.__http_headers)
         if (resp.status == 200):
             # Handle already exists
             raise PIDAlreadyExistsError("Handle already exists, cannot use it as an alias: %s" % identifier)
@@ -376,7 +376,7 @@ class HandleInfrastructure(DOInfrastructure):
             raise IOError("Failed to check for existing Handle %s (HTTP Code %s): %s" % (identifier, resp.status, resp.reason))
         # okay, alias is available. Now create it.
         values = {"values": [self.__generate_admin_value(), {"index": 1, "type": "HS_ALIAS", "data": {"format": "string", "value": str(original_identifier)}}]}
-        resp = self.connpool.urlopen("PUT", path, str(values), self.http_headers)
+        resp = self.__connpool.urlopen("PUT", path, str(values), self.__http_headers)
         if not(200 <= resp.status <= 299):
             raise IOError("Could not create Alias Handle %s: %s" % (identifier, resp.reason))
         return identifier
@@ -391,7 +391,7 @@ class HandleInfrastructure(DOInfrastructure):
     
     def is_alias(self, alias_identifier):
         path, identifier = self._prepare_identifier(alias_identifier)
-        resp = self.connpool.request("GET", path, None, self.http_headers)
+        resp = self.__connpool.request("GET", path, None, self.__http_headers)
         if resp.status == 404:
             raise KeyError("Handle not found: %s" % identifier)
         if not(200 <= resp.status <= 299):
@@ -416,9 +416,9 @@ class HandleInfrastructure(DOInfrastructure):
 
     def prefix_pid(self, suffix):
         """
-        Prepends a given (incomplete) identifier with the current Handle prefix.
+        Prepends a given (incomplete) identifier with the current Handle _prefix.
         """
-        return self.prefix + "/" + suffix
+        return self._prefix + "/" + suffix
     
     def manufacture_hashmap(self, identifier, characteristic_segment_number):
         """

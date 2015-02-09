@@ -45,7 +45,7 @@ from lapis.model.doset import DigitalObjectSet
 from lapis.model.dolist import DigitalObjectArray, DigitalObjectLinkedList
 from lapis.model.hashmap import BASE_INDEX_HASHMAP_SIZE
 
-TESTING_CONFIG_DEFAULTS = { "handle-prefix": "10876.test", "server-address": "handle8.dkrz.de", "server-port": 443 }
+TESTING_CONFIG_DEFAULTS = { "handle-_prefix": "10876.test", "server-address": "handle8.dkrz.de", "server-port": 443 }
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ class TestDOInfrastructure(unittest.TestCase):
         self.logger = logging.getLogger(__name__)
         self.random = Random(43210)
         self.created_pids = []
-        self.prefix = TESTING_CONFIG_DEFAULTS["handle-prefix"]+"/"
+        self._prefix = TESTING_CONFIG_DEFAULTS["handle-_prefix"]+"/"
         
     def tearDown(self):
         pass
@@ -78,24 +78,24 @@ class TestDOInfrastructure(unittest.TestCase):
     
     def test_do_values(self):
         # values
-        pid = self.prefix+"test_do_values"
+        pid = self._prefix+"test_do_values"
         resloc = "http://www.example.com/1"
         restype = "MY_TEST_TYPE"
-        pid2 = self.prefix+"test_do_values_2"
-        pid3 = self.prefix+"test_do_values_3"
+        pid2 = self._prefix+"test_do_values_2"
+        pid3 = self._prefix+"test_do_values_3"
         # create DO
         dobj = self.do_infra.create_do(pid)
         self.created_pids.append(pid)
         assert dobj != None
         dobj.resource_location = resloc
         assert dobj.resource_location == resloc
-        dobj.resource_type = restype
-        assert dobj.resource_type == restype
+        dobj._resource_type = restype
+        assert dobj._resource_type == restype
         # look up and assert
         dobj2 = self.do_infra.lookup_pid(pid)
         assert dobj2 != None
         assert dobj2.resource_location == resloc
-        assert dobj2.resource_type == restype
+        assert dobj2._resource_type == restype
         # create a second DO
         dobj2 = self.do_infra.create_do(pid2)
         self.created_pids.append(pid2)
@@ -140,14 +140,14 @@ class TestDOInfrastructure(unittest.TestCase):
         assert dobj == None
         
     def test_infra_operations(self):
-        dobj = self.do_infra.lookup_pid(self.prefix+"does-not-exist")
+        dobj = self.do_infra.lookup_pid(self._prefix+"does-not-exist")
         assert dobj == None
         # duplication attempts
-        dobj = self.do_infra.create_do(self.prefix+"duplicate")
-        self.created_pids.append(self.prefix+"duplicate")
+        dobj = self.do_infra.create_do(self._prefix+"duplicate")
+        self.created_pids.append(self._prefix+"duplicate")
         assert dobj != None
         try:
-            dobj2 = self.do_infra.create_do(self.prefix+"duplicate")
+            dobj2 = self.do_infra.create_do(self._prefix+"duplicate")
             self.fail("Creation attempt of object with duplicate PID successful!")
         except PIDAlreadyExistsError:
             pass
@@ -163,9 +163,9 @@ class TestDOInfrastructure(unittest.TestCase):
     
     def test_aliases(self):
         resloc = "http://www.example.com/alias_original"
-        id_orig = self.prefix+"alias_original"
-        id_alias1 = self.prefix+"alias1"
-        id_alias2 = self.prefix+"alias2"
+        id_orig = self._prefix+"alias_original"
+        id_alias1 = self._prefix+"alias1"
+        id_alias2 = self._prefix+"alias2"
         dobj1 = self.do_infra.create_do(id_orig)
         id_orig = dobj1.identifier
         self.created_pids.append(id_orig)
@@ -214,9 +214,9 @@ class TestDOInfrastructure(unittest.TestCase):
         
     def test_sets(self):
         # create a set
-        id_ele = [self.prefix+"setele1", self.prefix+"setele2", self.prefix+"setele3"]
-        id_set = self.prefix+"set"
-        non_ele_id = self.prefix+"some-non-ele"
+        id_ele = [self._prefix+"setele1", self._prefix+"setele2", self._prefix+"setele3"]
+        id_set = self._prefix+"set"
+        non_ele_id = self._prefix+"some-non-ele"
         ele = []
         for i in range(len(id_ele)):
             newele = self.do_infra.create_do(id_ele[i])
@@ -241,7 +241,7 @@ class TestDOInfrastructure(unittest.TestCase):
         assert ele_set.num_set_elements() == 3
         # now extend and check again
         ele_set = self.do_infra.lookup_pid(id_set)
-        id_ele += [self.prefix+"setele4"]
+        id_ele += [self._prefix+"setele4"]
         newele = self.do_infra.create_do(id_ele[3])
         id_ele[3] = newele.identifier
         self.created_pids.append(newele.identifier)
@@ -282,7 +282,7 @@ class TestDOInfrastructure(unittest.TestCase):
         
         
     def test_lists(self):
-        id_listele = [self.prefix+"listele1", self.prefix+"listele2", self.prefix+"listele3"]
+        id_listele = [self._prefix+"listele1", self._prefix+"listele2", self._prefix+"listele3"]
         listele = []
         # create elements
         for i in range(len(id_listele)):
@@ -291,12 +291,12 @@ class TestDOInfrastructure(unittest.TestCase):
             id_listele[i] = newele.identifier
             self.created_pids.append(newele.identifier)
         # test array
-        id_array = self.prefix+"array"
+        id_array = self._prefix+"array"
         do_array = self.do_infra.create_do(id_array, DigitalObjectArray)
         self.created_pids.append(do_array.identifier)
         self.list_basic(do_array, id_listele, listele)
         # test linked list
-        id_llist = self.prefix+"linkedlist"
+        id_llist = self._prefix+"linkedlist"
         do_llist = self.do_infra.create_do(id_llist, DigitalObjectLinkedList)
         self.created_pids.append(do_llist.identifier)
         self.list_basic(do_llist, id_listele, listele)
@@ -393,7 +393,7 @@ class TestHandleInfrastructure(TestDOInfrastructure):
         host = TESTING_CONFIG_DEFAULTS["server-address"]
         port = TESTING_CONFIG_DEFAULTS["server-port"]
         urlpath = "/api/handles/"
-        prefix = TESTING_CONFIG_DEFAULTS["handle-prefix"]
+        prefix = TESTING_CONFIG_DEFAULTS["handle-_prefix"]
         additional_identifier_element = ""
         user = ""
         password = ""
@@ -410,11 +410,11 @@ class TestHandleInfrastructure(TestDOInfrastructure):
             if cfgparse.has_option("server", "user_index"): user_index = cfgparse.get("server", "user_index")
             if cfgparse.has_option("server", "password"): password = cfgparse.get("server", "password")
             if cfgparse.has_option("server", "unsafe_ssl"): unsafe_ssl = cfgparse.getboolean("server", "unsafe_ssl")
-            if cfgparse.has_option("handle", "prefix"): prefix = cfgparse.get("handle", "prefix")
+            if cfgparse.has_option("handle", "_prefix"): prefix = cfgparse.get("handle", "_prefix")
             if cfgparse.has_option("handle", "additionalelement"): additional_identifier_element = cfgparse.get("handle", "additionalelement")
         # now create infra instance
         logger.info("Running tests with following parameters:")
-        logger.info("Host: %s, Port: %s, User: %s, User index: %s, URL path: %s, prefix: %s, additional element: %s, unsafe_ssl: %s" % (host, port, user, user_index, urlpath, prefix, additional_identifier_element, unsafe_ssl))
+        logger.info("Host: %s, Port: %s, User: %s, User index: %s, URL path: %s, _prefix: %s, additional element: %s, unsafe_ssl: %s" % (host, port, user, user_index, urlpath, prefix, additional_identifier_element, unsafe_ssl))
         self.do_infra = HandleInfrastructure(host, port, user, user_index, password, urlpath, prefix=prefix, additional_identifier_element=additional_identifier_element, unsafe_ssl=unsafe_ssl)
         
         
@@ -430,23 +430,23 @@ class TestHandleInfrastructure(TestDOInfrastructure):
                 self.logger.info("Could not delete test identifier %s" % dobj)
         
     def test_additional_element(self):
-        id1 = "%s/additional_element_test" % self.do_infra.prefix
+        id1 = "%s/additional_element_test" % self.do_infra._prefix
         do = self.do_infra.create_do(id1)
         assert do != None
         self.created_pids.append(do.identifier)
-        assert do.identifier == "%s/%sadditional_element_test" % (self.do_infra.prefix, self.do_infra.additional_identifier_element)
+        assert do.identifier == "%s/%sadditional_element_test" % (self.do_infra._prefix, self.do_infra._additional_identifier_element)
         do = self.do_infra.lookup_pid(id1)
         assert do != None
-        assert do.identifier == "%s/%sadditional_element_test" % (self.do_infra.prefix, self.do_infra.additional_identifier_element) 
-        do = self.do_infra.lookup_pid("%s/%sadditional_element_test" % (self.do_infra.prefix, self.do_infra.additional_identifier_element))
+        assert do.identifier == "%s/%sadditional_element_test" % (self.do_infra._prefix, self.do_infra._additional_identifier_element) 
+        do = self.do_infra.lookup_pid("%s/%sadditional_element_test" % (self.do_infra._prefix, self.do_infra._additional_identifier_element))
         assert do != None
-        assert do.identifier == "%s/%sadditional_element_test" % (self.do_infra.prefix, self.do_infra.additional_identifier_element)
+        assert do.identifier == "%s/%sadditional_element_test" % (self.do_infra._prefix, self.do_infra._additional_identifier_element)
         # create DO using generated identifier name
         do = self.do_infra.create_do()
         assert do != None
         self.created_pids.append(do.identifier)
         print(do.identifier)
-        assert do.identifier.startswith(self.do_infra.prefix+"/"+self.do_infra.additional_identifier_element)
+        assert do.identifier.startswith(self.do_infra._prefix+"/"+self.do_infra._additional_identifier_element)
         
 
 class TestPIDRegExp(unittest.TestCase):

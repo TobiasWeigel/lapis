@@ -79,7 +79,7 @@ class DigitalObject(object):
         infrastructure, no resource location or object-type entries should be given in the annotations dict. Also note
         that the annotations dict is assigned directly, not copied.
         :param resource_location: The resource location of the Digital Object's data, in case of external data.
-        :param resource_type: The resource type for external data. Note that resource_location and resource_type are not
+        :param _resource_type: The resource type for external data. Note that resource_location and _resource_type are not
           checked for consistency by the constructor. It is the caller's task to provide meaningful values.
         :param references: The references of this instance to other Digital Objects. As with annotations, this is a dict
           that is assigned directly, not copied.
@@ -129,7 +129,7 @@ class DigitalObject(object):
     def _set_resource_type(self, resource_type):
         self._do_infra._write_pid_value(self._id, 2, "RESOURCE_TYPE", resource_type)
 
-    resource_type = property(_get_resource_type, _set_resource_type, doc="The type of this Digital Object's external data. The type of this Digital Object may also be implicit through its class; then, the resource type should be None.")
+    _resource_type = property(_get_resource_type, _set_resource_type, doc="The type of this Digital Object's external data. The type of this Digital Object may also be implicit through its class; then, the resource type should be None.")
 
     def __get_id(self):
         return self._id
